@@ -23,7 +23,4 @@ steps:
     repository: 'authz'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    mavenOptions: '-Xmx3072m'
-    mavenAuthenticateFeed: false
-    effectivePomSkip: false
-    sonarQubeRunAnalysis: false
+    tags: '98'
