@@ -31,13 +31,13 @@ public class Authentication implements IAuthentication {
 
     @Override
     public ResponseEntity<UserProfile> validateApiKey(@RequestBody String apiKey) throws InvalidKeyException {
-        Optional<UserRepresentation> user = keycloakService.getUserByApiKey(apiKey);
+        Optional<UserRepresentation> user = keycloakService.getUserByApiKey(apiKey.replaceAll("^\"|\"$", ""));
         return ResponseEntity.ok(UserProfileMapper.INSTANCE.fromUserRepresentation(user.get()));
     }
 
     @Override
     public ResponseEntity<UserProfile> validateAccessToken(String token) throws InvalidAccessTokenException {
-        Optional<KUserInfo> user = keycloakService.getUserByAccessToken(token);
+        Optional<KUserInfo> user = keycloakService.getUserByAccessToken(token.replaceAll("^\"|\"$", ""));
         return ResponseEntity.ok(UserProfileMapper.INSTANCE.fromKUserInfo(user.get()));
     }
 

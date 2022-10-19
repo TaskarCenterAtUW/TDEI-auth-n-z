@@ -35,6 +35,7 @@ public interface IAuthentication {
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "validateApiKey",
             produces = {"application/json"},
+            consumes = {"text/plain"},
             method = RequestMethod.POST)
     ResponseEntity<UserProfile> validateApiKey(@RequestBody String apiKey) throws InvalidKeyException;
 
@@ -48,6 +49,7 @@ public interface IAuthentication {
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "validateAccessToken",
             produces = {"application/json"},
+            consumes = {"text/plain"},
             method = RequestMethod.POST)
     ResponseEntity<UserProfile> validateAccessToken(@RequestBody String token) throws InvalidAccessTokenException;
 
