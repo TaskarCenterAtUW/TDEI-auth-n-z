@@ -2,7 +2,7 @@ spring:
   application:
     name: tdei-auth
 server:
-  port: '8082'
+  port: '8080'
 spring-doc:
   swagger-ui:
     operationsSorter: alpha
