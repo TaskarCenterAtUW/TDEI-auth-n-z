@@ -21,6 +21,7 @@
         <org.lombok.version>1.18.24</org.lombok.version>
         <keycloak.version>19.0.2</keycloak.version>
         <feing.version>11.10</feing.version>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
     <dependencies>
         <dependency>
@@ -141,29 +142,29 @@
     <build>
         <plugins>
             <!-- exclude from jar-->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <layers>
-                        <enabled>true</enabled>
-                    </layers>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok-mapstruct-binding</artifactId>
-                        </exclude>
-                        <exclude>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.springframework.boot</groupId>-->
+            <!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <layers>-->
+            <!--                        <enabled>true</enabled>-->
+            <!--                    </layers>-->
+            <!--                    <excludes>-->
+            <!--                        <exclude>-->
+            <!--                            <groupId>org.projectlombok</groupId>-->
+            <!--                            <artifactId>lombok</artifactId>-->
+            <!--                        </exclude>-->
+            <!--                        <exclude>-->
+            <!--                            <groupId>org.projectlombok</groupId>-->
+            <!--                            <artifactId>lombok-mapstruct-binding</artifactId>-->
+            <!--                        </exclude>-->
+            <!--                        <exclude>-->
+            <!--                            <groupId>org.mapstruct</groupId>-->
+            <!--                            <artifactId>mapstruct</artifactId>-->
+            <!--                        </exclude>-->
+            <!--                    </excludes>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -182,7 +183,6 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${org.mapstruct.version}</version>
                         </path>
-
                         <!-- other annotation processors -->
                     </annotationProcessorPaths>
                 </configuration>
