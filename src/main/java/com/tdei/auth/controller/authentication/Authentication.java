@@ -47,4 +47,10 @@ public class Authentication implements IAuthentication {
         TokenResponse token = TokenMapper.INSTANCE.fromAccessTokenResponse(accessTokenResponse);
         return ResponseEntity.ok(token);
     }
+
+    @Override
+    public ResponseEntity<Boolean> hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative) {
+        return ResponseEntity.ok(keycloakService.hasPermission(userId, agencyId, roles, affirmative));
+    }
+
 }

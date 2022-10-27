@@ -10,6 +10,8 @@ import com.tdei.auth.model.dto.auth.TokenResponse;
 import com.tdei.auth.model.dto.auth.UserProfile;
 import com.tdei.auth.model.dto.common.LoginModel;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,8 +22,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Size;
 import java.security.InvalidKeyException;
+import java.util.Optional;
 
 @Validated
 public interface IAuthentication {
@@ -64,6 +70,20 @@ public interface IAuthentication {
     @RequestMapping(value = "authenticate",
             produces = {"application/json"},
             method = RequestMethod.POST)
-    ResponseEntity<TokenResponse> authenticate(@RequestBody LoginModel loginModel);
+    ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel);
+
+
+    @Operation(summary = "Check user access", description = "Returns boolean flag if user satisfies the roles.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns boolean flag if user satisfies the roles.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = Boolean.class)))),
+
+            @ApiResponse(responseCode = "401", description = "This request is unauthorized.", content = @Content),
+
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "hasPermission",
+            produces = {"application/json"},
+            method = RequestMethod.GET)
+    ResponseEntity<Boolean> hasPermission(@Parameter(in = ParameterIn.QUERY, description = "User identifier") @RequestParam() String userId, @Parameter(in = ParameterIn.QUERY, description = "Agency Id") @RequestParam(required = false) Optional<String> agencyId, @Parameter(in = ParameterIn.QUERY, description = "Roles") @Size(min = 1) @RequestParam() String[] roles, @Parameter(in = ParameterIn.QUERY, description = "Affirmative, true to satisfy atleast one role otherwise all roles") @RequestParam(required = false, defaultValue = "false") Optional<Boolean> affirmative);
 }
 

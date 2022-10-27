@@ -12,6 +12,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +33,7 @@ public class KeycloakService implements IKeycloakService {
     private ApplicationProperties applicationProperties;
 
     private boolean checkUserExists(String userName) {
-        return getUser(userName) != null;
+        return getUserByUserName(userName) != null;
     }
 
     public Optional<UserRepresentation> getUserByApiKey(String apiKey) throws InvalidKeyException {
@@ -54,6 +56,29 @@ public class KeycloakService implements IKeycloakService {
         } catch (Exception e) {
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
+    }
+
+    @Override
+    public Boolean hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative) {
+        UserResource user = getUserByUserId(userId);
+
+        //TODO: Need to move logic to pull information from DB
+        if (agencyId.isPresent()) {
+            String agencies = user.toRepresentation().getAttributes().get("agencies").toString();
+            if (!agencies.contains(agencyId.get())) return false;
+        }
+
+        var roleList = user.roles().getAll().getRealmMappings();
+        if (roleList == null || roleList.isEmpty()) return false;
+        Boolean satisfied = false;
+        if (affirmative.isPresent() && affirmative.get()) {
+            //User should match at least one role
+            satisfied = Arrays.stream(roles).anyMatch(x -> roleList.stream().anyMatch(s -> s.getName().equals(x)));
+        } else {
+            //User should have all roles defined
+            satisfied = Arrays.stream(roles).allMatch(x -> roleList.stream().anyMatch(s -> s.getName().equals(x)));
+        }
+        return satisfied;
     }
 
     public AccessTokenResponse getUserToken(LoginModel person) {
@@ -84,7 +109,7 @@ public class KeycloakService implements IKeycloakService {
         return keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
     }
 
-    private UserRepresentation getUser(String userName) {
+    private UserRepresentation getUserByUserName(String userName) {
         UsersResource usersResource = getUserInstance();
         List<UserRepresentation> user = usersResource.search(userName, true);
 
@@ -92,5 +117,15 @@ public class KeycloakService implements IKeycloakService {
             return null;
 
         return user.stream().findFirst().get();
+    }
+
+    private UserResource getUserByUserId(String userId) {
+        UsersResource usersResource = getUserInstance();
+        UserResource user = usersResource.get(userId);
+
+        if (user == null)
+            return null;
+
+        return user;
     }
 }
