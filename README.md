@@ -71,6 +71,10 @@ http://localhost:8080/swagger-ui/index.html
 Check-in to the master branch triggers the Azure pipeline [auth-n-z] CI/CD process which will build the source code,
 generate the package and create the docker image. Docker image will then be deployed to Azure app services.
 
+Process Flow Diagram:
+
+![](src/main/resources/static/images/deployment-pipeline.png)
+
 Development API documentation link
 
 https://tdei-gateway.azurewebsites.net/swagger-ui/index.html
