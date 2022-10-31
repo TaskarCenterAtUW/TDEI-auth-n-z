@@ -10,13 +10,13 @@ spring-doc:
     disable-swagger-default-url: 'true'
   writer-with-default-pretty-printer: 'true'
 swagger:
-  description: Authentication & Authorization service.
+  description: Authentication/Authorization API, this API is responsible any service related to the authentication and authorization of the user like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the users. This service will be exposed on Azure intranet and can be consumed by Azure intranet applications/services.
   contact:
     name: TDEI Support
     email: placeholder_support@transequity.cs.washington.edu
     url: https://placeholder.transequity.cs.washington.edu/support
   title: TDEI API
-  version: 0.0.1
+  version: v0.1
 Keycloak-client-endpoints:
   user-url: https://tdei-keycloak.azurewebsites.net/realms/tdei/protocol/openid-connect/userinfo
 keycloak:

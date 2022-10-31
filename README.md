@@ -65,4 +65,12 @@ $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 Navigate to the below link for API documentation and API playground
 
 http://localhost:8080/swagger-ui/index.html
- 
+
+## Deployment
+
+Check-in to the master branch triggers the Azure pipeline [auth-n-z] CI/CD process which will build the source code,
+generate the package and create the docker image. Docker image will then be deployed to Azure app services.
+
+Development API documentation link
+
+https://tdei-gateway.azurewebsites.net/swagger-ui/index.html
