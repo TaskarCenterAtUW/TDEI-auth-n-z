@@ -1,13 +1,13 @@
 package com.tdei.auth.service;
 
-import com.tdei.auth.config.ApplicationProperties;
-import com.tdei.auth.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.config.exception.handler.exceptions.InvalidCredentialsException;
-import com.tdei.auth.model.dto.auth.ClientCreds;
-import com.tdei.auth.model.dto.common.LoginModel;
+import com.tdei.auth.core.config.ApplicationProperties;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.model.auth.dto.ClientCreds;
+import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.contract.IKeycloakService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -16,7 +16,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.security.InvalidKeyException;
@@ -24,13 +23,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class KeycloakService implements IKeycloakService {
-    @Autowired
-    Keycloak keycloakInstance;
-    @Autowired
-    private ApplicationProperties applicationProperties;
+    private final Keycloak keycloakInstance;
+    private final ApplicationProperties applicationProperties;
 
     private boolean checkUserExists(String userName) {
         return getUserByUserName(userName) != null;

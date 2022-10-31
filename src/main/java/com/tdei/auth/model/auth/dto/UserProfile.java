@@ -1,4 +1,4 @@
-package com.tdei.auth.model.dto.auth;
+package com.tdei.auth.model.auth.dto;
 
 import lombok.Data;
 

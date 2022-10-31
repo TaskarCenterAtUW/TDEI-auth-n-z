@@ -1,4 +1,4 @@
-package com.tdei.auth.aspect;
+package com.tdei.auth.core.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;

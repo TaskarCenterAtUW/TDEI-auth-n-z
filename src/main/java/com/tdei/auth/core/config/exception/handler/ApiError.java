@@ -1,4 +1,4 @@
-package com.tdei.auth.config.exception.handler;
+package com.tdei.auth.core.config.exception.handler;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;

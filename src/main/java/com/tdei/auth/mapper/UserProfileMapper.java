@@ -1,6 +1,6 @@
 package com.tdei.auth.mapper;
 
-import com.tdei.auth.model.dto.auth.UserProfile;
+import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mapstruct.Mapper;

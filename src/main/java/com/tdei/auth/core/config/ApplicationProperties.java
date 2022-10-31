@@ -1,4 +1,4 @@
-package com.tdei.auth.config;
+package com.tdei.auth.core.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

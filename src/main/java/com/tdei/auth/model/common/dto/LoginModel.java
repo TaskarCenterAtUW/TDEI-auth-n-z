@@ -1,4 +1,4 @@
-package com.tdei.auth.model.dto.common;
+package com.tdei.auth.model.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

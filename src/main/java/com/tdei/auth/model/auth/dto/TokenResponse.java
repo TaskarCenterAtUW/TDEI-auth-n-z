@@ -1,4 +1,4 @@
-package com.tdei.auth.model.dto.auth;
+package com.tdei.auth.model.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

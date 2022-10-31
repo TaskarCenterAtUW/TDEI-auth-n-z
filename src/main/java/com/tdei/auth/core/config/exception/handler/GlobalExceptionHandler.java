@@ -1,8 +1,8 @@
-package com.tdei.auth.config.exception.handler;
+package com.tdei.auth.core.config.exception.handler;
 
-import com.tdei.auth.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.config.exception.handler.exceptions.InvalidCredentialsException;
-import com.tdei.auth.config.exception.handler.exceptions.ResourceNotFoundException;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 
         List<String> details = new ArrayList<>();
-        details = ex.getBindingResult().getFieldErrors().stream().map(error -> error.getObjectName() + " : " + error.getDefaultMessage()).collect(Collectors.toList());
+        details = ex.getBindingResult().getFieldErrors().stream().map(error -> error.getField() + " : " + error.getDefaultMessage()).collect(Collectors.toList());
 
         ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST, "Validation Errors", details);
 

@@ -1,4 +1,4 @@
-package com.tdei.auth.middleware.dto.common;
+package com.tdei.auth.core.middleware;
 
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;

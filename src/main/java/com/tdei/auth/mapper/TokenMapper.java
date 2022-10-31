@@ -1,6 +1,6 @@
 package com.tdei.auth.mapper;
 
-import com.tdei.auth.model.dto.auth.TokenResponse;
+import com.tdei.auth.model.auth.dto.TokenResponse;
 import org.keycloak.representations.AccessTokenResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;

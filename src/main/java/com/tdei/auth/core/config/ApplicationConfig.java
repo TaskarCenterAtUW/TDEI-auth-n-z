@@ -1,6 +1,6 @@
-package com.tdei.auth.config;
+package com.tdei.auth.core.config;
 
-import com.tdei.auth.middleware.dto.common.LogInterceptor;
+import com.tdei.auth.core.middleware.LogInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

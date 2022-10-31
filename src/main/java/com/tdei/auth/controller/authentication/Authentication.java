@@ -1,18 +1,18 @@
 package com.tdei.auth.controller.authentication;
 
-import com.tdei.auth.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.controller.authentication.contract.IAuthentication;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.mapper.TokenMapper;
 import com.tdei.auth.mapper.UserProfileMapper;
-import com.tdei.auth.model.dto.auth.TokenResponse;
-import com.tdei.auth.model.dto.auth.UserProfile;
-import com.tdei.auth.model.dto.common.LoginModel;
+import com.tdei.auth.model.auth.dto.TokenResponse;
+import com.tdei.auth.model.auth.dto.UserProfile;
+import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,12 +22,12 @@ import java.security.InvalidKeyException;
 import java.util.Optional;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1")
 @Tag(name = "Authentication", description = "Authentication operations")
 public class Authentication implements IAuthentication {
 
-    @Autowired
-    KeycloakService keycloakService;
+    private final KeycloakService keycloakService;
 
     @Override
     public ResponseEntity<UserProfile> validateApiKey(@RequestBody String apiKey) throws InvalidKeyException {

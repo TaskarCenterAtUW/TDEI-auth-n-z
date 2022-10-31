@@ -1,4 +1,4 @@
-package com.tdei.auth.config;
+package com.tdei.auth.core.config;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
@@ -16,7 +16,7 @@ public class BeanConfig {
 
     @Bean
     public Keycloak keycloakInstance() {
-       var keycloak = KeycloakBuilder.builder()
+        var keycloak = KeycloakBuilder.builder()
                 .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
                 .realm(applicationProperties.getKeycloak().getRealm())
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)

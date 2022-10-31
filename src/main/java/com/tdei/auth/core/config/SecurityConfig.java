@@ -1,4 +1,4 @@
-package com.tdei.auth.config;
+package com.tdei.auth.core.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;

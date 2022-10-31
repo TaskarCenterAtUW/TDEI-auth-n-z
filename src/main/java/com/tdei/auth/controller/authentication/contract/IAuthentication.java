@@ -5,10 +5,10 @@
  */
 package com.tdei.auth.controller.authentication.contract;
 
-import com.tdei.auth.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.model.dto.auth.TokenResponse;
-import com.tdei.auth.model.dto.auth.UserProfile;
-import com.tdei.auth.model.dto.common.LoginModel;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.model.auth.dto.TokenResponse;
+import com.tdei.auth.model.auth.dto.UserProfile;
+import com.tdei.auth.model.common.dto.LoginModel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
