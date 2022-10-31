@@ -66,7 +66,14 @@ Navigate to the below link for API documentation and API playground
 
 http://localhost:8080/swagger-ui/index.html
 
-## Deployment
+## CI/CD [Azure Pipeline]
+
+### Continuous Integration (CI)
+
+Currently CI is not implemented as part of Azure pipeline. Test automated integration will be taken up in next
+development cycle.
+
+### Continuous Deployment (CD)
 
 Check-in to the master branch triggers the Azure pipeline [auth-n-z] CI/CD process which will build the source code,
 generate the package and create the docker image. Docker image will then be deployed to Azure app services.
