@@ -1,0 +1,30 @@
+
+on:
+  pull_request:
+    branches: [github-workflow-poc-dev]
+  workflow_dispatch:
+    
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and push to ACR
+        run:  echo "Demo build step"
+  DeployToDev:
+    name: Deploy to Dev environment
+    needs: [Build]
+    
+    runs-on: ubuntu-latest
+    environment:
+      name: Development
+      url: 'http://dev.example.com'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy to Dev environment
+        run:  echo "Demo code to deploy to Azure App service"
+              
+
+
+
+
