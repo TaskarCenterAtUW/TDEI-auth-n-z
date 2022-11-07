@@ -7,24 +7,27 @@ on:
   workflow_dispatch:
     
 jobs:
-  Build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build and push to ACR
-        run:  echo "Demo build step"
-  DeployToDev:
-    name: Deploy to Dev environment
-    needs: [Build]
-    
-    runs-on: ubuntu-latest
-    environment:
-      name: Development
-      url: 'http://dev.example.com'
-    steps:
-      - uses: actions/checkout@v2
-      - name: Deploy to Dev environment
-        run:  echo "Demo code to deploy to Azure App service"
+  build-and-deploy:
+      runs-on: ubuntu-latest
+      steps:
+      # checkout the repo
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@main
+        
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: 'Build and push image'
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-n-z:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-n-z:${{ github.sha }}
 
 
 
