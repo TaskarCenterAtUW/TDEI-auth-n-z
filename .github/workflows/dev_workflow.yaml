@@ -8,6 +8,7 @@ on:
     
 jobs:
   build:
+    environment: development
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -23,6 +24,7 @@ jobs:
         login-server: ${{ secrets.REGISTRY_DOMAIN }}
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
+    - name: Publish image to Azure Registry
     - run: |
         docker build . -t ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
         docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }} 
