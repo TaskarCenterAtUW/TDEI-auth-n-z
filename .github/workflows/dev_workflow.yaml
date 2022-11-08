@@ -20,12 +20,12 @@ jobs:
       run: mvn --batch-mode --update-snapshots package
     - uses: azure/docker-login@v1
       with:
-        login-server: tdeidocker.azurecr.io
+        login-server: ${{ secrets.REGISTRY_DOMAIN }}
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     - run: |
-        docker build . -t tdeidocker.azurecr.io/auth-n-z:${{ github.sha }}
-        docker push tdeidocker.azurecr.io/auth-n-z:${{ github.sha }} 
+        docker build . -t ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
+        docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }} 
 
 
 
