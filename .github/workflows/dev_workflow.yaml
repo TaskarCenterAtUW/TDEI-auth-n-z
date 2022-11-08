@@ -30,8 +30,11 @@ jobs:
           docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
   Deploy:
     needs: Build
-    environment: Development
+    environment: 
+      name: Development
+      url: ${{ secrets.ENVIRONMENT_URL}}}
     runs-on: ubuntu-latest
+
     steps:
     - name: Deploy to Dev
       uses: azure/webapps-deploy@v2
