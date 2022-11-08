@@ -1,0 +1,20 @@
+on:
+  push:
+    branches-ignore: 
+      - '**'
+  pull_request:
+    branches: [github-workflow-poc-dev]
+    types:
+      - closed
+  workflow_dispatch:
+    
+jobs:
+  Lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Super-Linter validation
+        uses: github/super-linter@v4.9.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
