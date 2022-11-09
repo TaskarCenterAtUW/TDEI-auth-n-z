@@ -30,9 +30,9 @@ jobs:
           docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
   Deploy:
     needs: Build
-    environment: 
+    environment:
       name: Development
-      url: ${{ secrets.ENVIRONMENT_URL }}
+      url: "${{ secrets.ENVIRONMENT_URL }}"
     runs-on: ubuntu-latest
 
     steps:
