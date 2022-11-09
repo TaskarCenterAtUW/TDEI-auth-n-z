@@ -1,7 +1,8 @@
 spring:
   application:
     name: tdei-auth
-server:
+  config:
+    import: optional:developer-local-properties.yaml
   port: '8080'
 spring-doc:
   swagger-ui:
@@ -26,7 +27,7 @@ keycloak:
   bearer-only: true
   resource: tdei-gateway
   credentials:
-    secret: A71N884x3HbU2g4KKIsww8pt5VXxxNNH
+    secret:
   use-resource-role-mappings: true
 logging:
   level:
