@@ -32,6 +32,20 @@ Clone the project from source controller
 $ git clone https://TDEI-UW@dev.azure.com/TDEI-UW/TDEI/_git/gateway
 ```
 
+## Secrets
+
+Application secrets are not included in the code repository. Below are the instruction for each environment
+
+###### DEV
+
+Request for **developer-local-properties.yaml** file from Admin, which should be copied to below location
+
+```src/main/resources/developer-local-properties.yaml```
+
+#### PROD
+
+Required properties will be set as an environment variables on the deployment environment.
+
 ## Building the project
 
 ### IDE
