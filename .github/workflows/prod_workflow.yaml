@@ -32,7 +32,7 @@ jobs:
     needs: Build
     environment: 
       name: Development
-      url: ${{ secrets.ENVIRONMENT_URL}}}
+      url: ${{ secrets.ENVIRONMENT_URL }}
     runs-on: ubuntu-latest
 
     steps:
