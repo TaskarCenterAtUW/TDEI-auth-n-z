@@ -1,11 +1,11 @@
 
 on:
   pull_request:
-    branches: [dev]
+    branches: [master]
     types:
       - closed
   workflow_dispatch:
-
+    
 jobs:
   Build:
     environment: Development
@@ -30,16 +30,21 @@ jobs:
           docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
   Deploy:
     needs: Build
-    environment: 
+    environment:
       name: Development
+      #url: "${{ secrets.ENVIRONMENT_URL }}"
     runs-on: ubuntu-latest
+
     steps:
     - name: Deploy to Dev
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'tdei-authz-devops'
+        #slot-name: 'dev'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         images: '${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}'
+
+
 
 
 
