@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Publish image to Azure Registry
         run: |
-          docker build . -t ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
+          docker build -t ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }} .
           docker push ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.REGISTRY_REPO }}:${{ github.sha }}
   Deploy:
     needs: Build
