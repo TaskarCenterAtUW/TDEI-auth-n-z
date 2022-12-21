@@ -1,13 +1,19 @@
 package com.tdei.auth.service;
 
+import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
+import com.tdei.auth.model.auth.dto.RegisterUser;
+import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
+import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -16,22 +22,21 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.security.InvalidKeyException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class KeycloakService implements IKeycloakService {
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
 
-    private boolean checkUserExists(String userName) {
-        return getUserByUserName(userName) != null;
-    }
+    @Autowired
+    UserManagementRepository userManagementRepository;
 
     public Optional<UserRepresentation> getUserByApiKey(String apiKey) throws InvalidKeyException {
         UsersResource instance = getUserInstance();
@@ -56,25 +61,36 @@ public class KeycloakService implements IKeycloakService {
     }
 
     @Override
-    public Boolean hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative) {
-        UserResource user = getUserByUserId(userId);
-
-        //TODO: Need to move logic to pull information from DB
-        if (agencyId.isPresent()) {
-            String agencies = user.toRepresentation().getAttributes().get("agencies").toString();
-            if (!agencies.contains(agencyId.get())) return false;
-        }
-
-        var roleList = user.roles().getAll().getRealmMappings();
-        if (roleList == null || roleList.isEmpty()) return false;
+    public Boolean hasPermission(String userId, Optional<String> orgId, String[] roles, Optional<Boolean> affirmative) {
         Boolean satisfied = false;
-        if (affirmative.isPresent() && affirmative.get()) {
-            //User should match at least one role
-            satisfied = Arrays.stream(roles).anyMatch(x -> roleList.stream().anyMatch(s -> s.getName().equals(x)));
-        } else {
-            //User should have all roles defined
-            satisfied = Arrays.stream(roles).allMatch(x -> roleList.stream().anyMatch(s -> s.getName().equals(x)));
+
+        var userRoles = userManagementRepository.getUserRoles(userId);
+
+        //Sytem admin check, person is allowed to do all action
+        if (userRoles.stream().anyMatch(x -> x.getRoleName().equalsIgnoreCase(RoleConstants.TDEI_ADMIN)))
+            return true;
+
+        //Check if role exists
+        if (orgId.isPresent() && !orgId.get().isEmpty()) {
+            if (userRoles.stream().anyMatch(x -> (x.getOrgId().equals(orgId.get())) &&
+                    (affirmative.isPresent() && affirmative.get() ?
+                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
+                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
+            ))
+                satisfied = true;
+            else
+                satisfied = false;
         }
+//        else {
+//            if (userRoles.stream().anyMatch(x ->
+//                    (affirmative.isPresent() && affirmative.get() ?
+//                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
+//                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
+//            ))
+//                satisfied = true;
+//            else
+//                satisfied = false;
+//        }
         return satisfied;
     }
 
@@ -106,14 +122,60 @@ public class KeycloakService implements IKeycloakService {
         return keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
     }
 
-    private UserRepresentation getUserByUserName(String userName) {
-        UsersResource usersResource = getUserInstance();
-        List<UserRepresentation> user = usersResource.search(userName, true);
+    public UserProfile registerUser(RegisterUser userDto) throws Exception {
+        try {
+            UsersResource usersResource = getUserInstance();
 
-        if (user == null || user.isEmpty())
-            return null;
+            UserRepresentation user = new UserRepresentation();
+            if (!userDto.getFirstName().isEmpty())
+                user.setFirstName(userDto.getFirstName());
+            if (!userDto.getLastName().isEmpty())
+                user.setLastName(userDto.getLastName());
+            user.setUsername(userDto.getEmail());
+            user.setEmailVerified(true);
+            user.setEnabled(true);
+            //Set attributes
+            if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
+                Map<String, List<String>> attributes = new HashMap<>();
+                attributes.put("phone", List.of(userDto.getPhone()));
+                user.setAttributes(attributes);
+            }
 
-        return user.stream().findFirst().get();
+            var createdUserRes = usersResource.create(user);
+            if (createdUserRes.getStatus() == 201) {
+                String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
+                var createdUser = usersResource.get(userId).toRepresentation();
+
+                var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(createdUser);
+                if (createdUser.getAttributes().get("phone") != null)
+                    userProfile.setPhone(createdUser.getAttributes().get("phone").get(0).toString());
+                return userProfile;
+            }
+        } catch (Exception e) {
+            log.error("Failed registering the user", e);
+            throw new Exception("Failed registering the user");
+        }
+        return null;
+    }
+
+    public UserProfile getUserByUserName(String userName) throws Exception {
+        try {
+            UsersResource usersResource = getUserInstance();
+            List<UserRepresentation> user = usersResource.search(userName, true);
+
+            if (user == null || user.isEmpty())
+                return null;
+
+            var userInfo = user.stream().findFirst().get();
+
+            var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(userInfo);
+            if (userInfo.getAttributes().get("phone") != null)
+                userProfile.setPhone(userInfo.getAttributes().get("phone").toString());
+            return userProfile;
+        } catch (Exception e) {
+            log.error("Error fetching the user information", e);
+            throw new Exception("Error fetching the user information");
+        }
     }
 
     private UserResource getUserByUserId(String userId) {
