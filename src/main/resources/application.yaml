@@ -1,9 +1,14 @@
+server:
+  port: '8080'
 spring:
   application:
     name: tdei-auth
   config:
     import: optional:developer-local-properties.yaml
-  port: '8080'
+  datasource:
+    username: "${SPRING_DATASOURCE_USERNAME}"
+    url: "${SPRING_DATASOURCE_URL}"
+    password: "${SPRING_DATASOURCE_PASSWORD}"
 spring-doc:
   swagger-ui:
     operationsSorter: alpha

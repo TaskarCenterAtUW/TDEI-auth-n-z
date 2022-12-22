@@ -6,6 +6,7 @@
 package com.tdei.auth.controller.authentication.contract;
 
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
@@ -31,6 +32,35 @@ import java.util.Optional;
 
 @Validated
 public interface IAuthentication {
+
+    @Operation(summary = "Get user profile by username", description = "Get user profile by username.  Returns the user profile. ",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+
+            @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
+
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "getUserByUsername",
+            produces = {"application/json"},
+            consumes = {"*"},
+            method = RequestMethod.GET)
+    ResponseEntity<UserProfile> getUserByUserName(String userName) throws Exception;
+
+    @Operation(summary = "User Registration API", description = "User Registration API.  Returns the user profile for the newly created user. ",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile for the newly created user.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+
+            @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
+
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "registerUser",
+            produces = {"application/json"},
+            consumes = {"application/json"},
+            method = RequestMethod.POST)
+    ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception;
+
     @Operation(summary = "Validates the API Key", description = "Validates the API Key.  Returns the user profile for the validated api key. ",
             tags = {"Authentication"})
     @ApiResponses(value = {
