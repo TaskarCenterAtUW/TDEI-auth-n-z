@@ -127,11 +127,12 @@ public class KeycloakService implements IKeycloakService {
             user.setEnabled(true);
 
             //Set user attributes
+            Map<String, List<String>> attributes = new HashMap<>();
+            attributes.put("x-api-key", List.of(UUID.randomUUID().toString()));
             if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
-                Map<String, List<String>> attributes = new HashMap<>();
                 attributes.put("phone", List.of(userDto.getPhone()));
-                user.setAttributes(attributes);
             }
+            user.setAttributes(attributes);
 
             //Set the credentials
             CredentialRepresentation cred = new CredentialRepresentation();
@@ -170,6 +171,8 @@ public class KeycloakService implements IKeycloakService {
             var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(userInfo);
             if (userInfo.getAttributes().get("phone") != null)
                 userProfile.setPhone(userInfo.getAttributes().get("phone").toString());
+            if (userInfo.getAttributes().get("x-api-key") != null)
+                userProfile.setApiKey(userInfo.getAttributes().get("x-api-key").toString());
             return userProfile;
         } catch (Exception e) {
             log.error("Error fetching the user information", e);
