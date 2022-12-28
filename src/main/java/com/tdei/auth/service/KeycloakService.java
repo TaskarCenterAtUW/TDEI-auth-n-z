@@ -21,6 +21,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,16 +82,6 @@ public class KeycloakService implements IKeycloakService {
             else
                 satisfied = false;
         }
-//        else {
-//            if (userRoles.stream().anyMatch(x ->
-//                    (affirmative.isPresent() && affirmative.get() ?
-//                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
-//                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
-//            ))
-//                satisfied = true;
-//            else
-//                satisfied = false;
-//        }
         return satisfied;
     }
 
@@ -134,12 +125,20 @@ public class KeycloakService implements IKeycloakService {
             user.setUsername(userDto.getEmail());
             user.setEmailVerified(true);
             user.setEnabled(true);
-            //Set attributes
+
+            //Set user attributes
             if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
                 Map<String, List<String>> attributes = new HashMap<>();
                 attributes.put("phone", List.of(userDto.getPhone()));
                 user.setAttributes(attributes);
             }
+
+            //Set the credentials
+            CredentialRepresentation cred = new CredentialRepresentation();
+            cred.setType(CredentialRepresentation.PASSWORD);
+            cred.setValue(userDto.getPassword());
+            cred.setTemporary(false);
+            user.setCredentials(List.of(cred));
 
             var createdUserRes = usersResource.create(user);
             if (createdUserRes.getStatus() == 201) {

@@ -15,4 +15,7 @@ public class RegisterUser {
     @NotEmpty
     private String email;
     private String phone;
+    @NotNull
+    @NotEmpty
+    private String password;
 }
