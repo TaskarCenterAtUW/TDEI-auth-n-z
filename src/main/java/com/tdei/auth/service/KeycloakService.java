@@ -81,6 +81,13 @@ public class KeycloakService implements IKeycloakService {
                 satisfied = true;
             else
                 satisfied = false;
+        } else {
+            if (userRoles.stream().anyMatch(x ->
+                    (affirmative.isPresent() && affirmative.get() ?
+                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
+                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
+            ))
+                satisfied = true;
         }
         return satisfied;
     }
