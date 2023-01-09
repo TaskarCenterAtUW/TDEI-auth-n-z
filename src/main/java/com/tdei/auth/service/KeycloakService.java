@@ -1,5 +1,6 @@
 package com.tdei.auth.service;
 
+import com.google.gson.internal.LinkedTreeMap;
 import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
@@ -7,6 +8,7 @@ import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentials
 import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
 import com.tdei.auth.model.auth.dto.RegisterUser;
+import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
@@ -114,6 +116,25 @@ public class KeycloakService implements IKeycloakService {
             throw new InvalidCredentialsException("Invalid Credentials");
         }
         return token;
+    }
+
+    public TokenResponse reIssueToken(String refreshToken) {
+        try {
+            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getTokenUrl());
+            LinkedTreeMap user = keyclockTokenClient.refreshToken(
+                    applicationProperties.getKeycloak().getResource(),
+                    applicationProperties.getKeycloak().getCredentials().getSecret(),
+                    refreshToken,
+                    "refresh_token");
+            TokenResponse res = new TokenResponse();
+            res.setToken(user.get("access_token").toString());
+            res.setRefreshToken(user.get("refresh_token").toString());
+            res.setExpiresIn(Math.round((Double) user.get("expires_in")));
+            res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
+            return res;
+        } catch (Exception e) {
+            throw new InvalidAccessTokenException("Invalid/Expired Access Token");
+        }
     }
 
     private UsersResource getUserInstance() {

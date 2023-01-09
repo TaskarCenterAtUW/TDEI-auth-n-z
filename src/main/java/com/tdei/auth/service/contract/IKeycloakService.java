@@ -1,6 +1,7 @@
 package com.tdei.auth.service.contract;
 
 import com.tdei.auth.model.auth.dto.RegisterUser;
+import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -19,4 +20,6 @@ public interface IKeycloakService {
     UserProfile registerUser(RegisterUser userDto) throws Exception;
 
     UserProfile getUserByUserName(String userName) throws Exception;
+
+    TokenResponse reIssueToken(String refreshToken);
 }

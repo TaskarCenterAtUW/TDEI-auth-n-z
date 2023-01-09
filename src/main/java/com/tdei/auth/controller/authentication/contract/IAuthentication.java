@@ -115,5 +115,20 @@ public interface IAuthentication {
             produces = {"application/json"},
             method = RequestMethod.GET)
     ResponseEntity<Boolean> hasPermission(@Parameter(in = ParameterIn.QUERY, description = "User identifier") @RequestParam() String userId, @Parameter(in = ParameterIn.QUERY, description = "Agency Id") @RequestParam(required = false) Optional<String> agencyId, @Parameter(in = ParameterIn.QUERY, description = "Roles") @Size(min = 1) @RequestParam() String[] roles, @Parameter(in = ParameterIn.QUERY, description = "Affirmative, true to satisfy atleast one role otherwise all roles") @RequestParam(required = false, defaultValue = "false") Optional<Boolean> affirmative);
+
+
+    @Operation(summary = "Re-issue access token", description = "Re-issues access token provided refresh token",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = TokenResponse.class)))),
+
+            @ApiResponse(responseCode = "404", description = "Access token is invalid.", content = @Content),
+
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "reIssueToken",
+            produces = {"application/json"},
+            consumes = {"application/json"},
+            method = RequestMethod.POST)
+    ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken);
 }
 

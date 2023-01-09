@@ -145,7 +145,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         List<String> details = new ArrayList<>();
         details.add(ex.getMessage());
 
-        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.NOT_FOUND, "Invalid Access Token", details);
+        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.UNAUTHORIZED, "Invalid Access Token", details);
 
         return ResponseEntityBuilder.build(err);
     }
