@@ -125,7 +125,7 @@ public interface IAuthentication {
             @ApiResponse(responseCode = "404", description = "Access token is invalid.", content = @Content),
 
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
-    @RequestMapping(value = "reIssueToken",
+    @RequestMapping(value = "refreshToken",
             produces = {"application/json"},
             consumes = {"application/json"},
             method = RequestMethod.POST)
