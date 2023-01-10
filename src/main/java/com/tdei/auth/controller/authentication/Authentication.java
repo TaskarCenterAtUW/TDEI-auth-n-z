@@ -65,4 +65,10 @@ public class Authentication implements IAuthentication {
         if (profile == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(keycloakService.getUserByUserName(userName));
     }
+
+    @Override
+    public ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken) {
+        TokenResponse accessTokenResponse = keycloakService.reIssueToken(refreshToken.replaceAll("^\"|\"$", ""));
+        return ResponseEntity.ok(accessTokenResponse);
+    }
 }

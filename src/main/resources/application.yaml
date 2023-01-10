@@ -25,6 +25,7 @@ swagger:
   version: v0.1
 Keycloak-client-endpoints:
   user-url: https://tdei-keycloak.azurewebsites.net/realms/tdei/protocol/openid-connect/userinfo
+  token-url: https://tdei-keycloak.azurewebsites.net/realms/tdei/protocol/openid-connect/token
 keycloak:
   auth-server-url: https://tdei-keycloak.azurewebsites.net
   realm: tdei
