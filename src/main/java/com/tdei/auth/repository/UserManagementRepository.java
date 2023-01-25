@@ -19,7 +19,7 @@ public class UserManagementRepository implements IUserManagementRepository {
     public List<UserRoles> getUserRoles(String userId) {
         try {
             String sql = "SELECT ur.*, r.name FROM user_roles ur\n" +
-                    " INNER JOIN roles r on r.id = ur.role_id\n" +
+                    " INNER JOIN roles r on r.role_id = ur.role_id\n" +
                     " WHERE ur.user_id = '" + userId + "'";
             return jdbcTemplate.query(sql, new RolesRowMapper());
         } catch (DataAccessException e) {
