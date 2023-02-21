@@ -147,10 +147,11 @@ public class KeycloakService implements IKeycloakService {
 
             UserRepresentation user = new UserRepresentation();
             if (!userDto.getFirstName().isEmpty())
-                user.setFirstName(userDto.getFirstName());
+                user.setFirstName(userDto.getFirstName().trim());
             if (!userDto.getLastName().isEmpty())
-                user.setLastName(userDto.getLastName());
-            user.setUsername(userDto.getEmail());
+                user.setLastName(userDto.getLastName().trim());
+            user.setUsername(userDto.getEmail().trim());
+            user.setEmail(userDto.getEmail().trim());
             user.setEmailVerified(true);
             user.setEnabled(true);
 
