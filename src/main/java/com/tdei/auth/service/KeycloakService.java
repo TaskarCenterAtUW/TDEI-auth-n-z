@@ -151,6 +151,7 @@ public class KeycloakService implements IKeycloakService {
             if (!userDto.getLastName().isEmpty())
                 user.setLastName(userDto.getLastName());
             user.setUsername(userDto.getEmail());
+            user.setEmail(userDto.getEmail());
             user.setEmailVerified(true);
             user.setEnabled(true);
 
