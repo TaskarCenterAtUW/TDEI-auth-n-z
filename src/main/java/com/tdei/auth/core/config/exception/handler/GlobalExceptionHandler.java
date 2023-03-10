@@ -3,6 +3,7 @@ package com.tdei.auth.core.config.exception.handler;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
 import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
+import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -158,6 +159,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         details.add(String.format("Could not find the %s method for URL %s", ex.getHttpMethod(), ex.getRequestURL()));
 
         ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST, "Method Not Found", details);
+
+        return ResponseEntityBuilder.build(err);
+
+    }
+
+    @ExceptionHandler(UserExistsException.class)
+    protected ResponseEntity<Object> handleUserExistsException(UserExistsException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+        List<String> details = new ArrayList<>();
+        details.add(ex.getMessage());
+
+        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.CONFLICT, "User already exists", details);
 
         return ResponseEntityBuilder.build(err);
 

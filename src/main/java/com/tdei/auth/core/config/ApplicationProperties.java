@@ -10,9 +10,23 @@ import org.springframework.stereotype.Component;
 @Data
 public class ApplicationProperties {
     private SwaggerProperties swagger;
+    private SpringProperties spring;
     private keycloakProperties keycloak;
     private KeycloakEndpointUrls keycloakClientEndpoints;
-    private String appname;
+
+    @Data
+    @NoArgsConstructor
+    public static class SpringProperties {
+        private Application application;
+
+        @Data
+        @NoArgsConstructor
+        public static class Application {
+            private String secret;
+            private int secretTtl;
+            private String name;
+        }
+    }
 
     @Data
     @NoArgsConstructor

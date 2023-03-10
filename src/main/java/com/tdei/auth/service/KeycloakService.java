@@ -5,6 +5,7 @@ import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
 import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
 import com.tdei.auth.model.auth.dto.RegisterUser;
@@ -14,6 +15,8 @@ import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -28,18 +31,32 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
+import java.security.Key;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @RequiredArgsConstructor
 @Service
 @Slf4j
 public class KeycloakService implements IKeycloakService {
+    private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
 
     @Autowired
     UserManagementRepository userManagementRepository;
+
+    private Key getSigningKey() {
+        //The JWT signature algorithm we will be using to sign the token
+        signatureAlgorithm = SignatureAlgorithm.HS256;
+        //We will sign our JWT with our ApiKey secret, which will come from env configuration
+        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(applicationProperties.getSpring().getApplication().getSecret());
+        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
+        return signingKey;
+    }
 
     public Optional<UserRepresentation> getUserByApiKey(String apiKey) throws InvalidKeyException {
         UsersResource instance = getUserInstance();
@@ -137,6 +154,44 @@ public class KeycloakService implements IKeycloakService {
         }
     }
 
+    @Override
+    public String generateSecret() {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+        //Let's set the JWT Claims
+        //Builds the JWT and serializes it to a compact, URL-safe string
+        String secretToken = Jwts.builder().setId(UUID.randomUUID().toString())
+                .setIssuedAt(now)
+                .setSubject("intranet communication")
+                .setIssuer("tdei")
+                .setExpiration(Date.from(now.toInstant().plus(applicationProperties.getSpring().getApplication().getSecretTtl(), ChronoUnit.SECONDS)))
+                .signWith(getSigningKey(), signatureAlgorithm)
+                .compact();
+        return secretToken;
+    }
+
+    @Override
+    public Boolean validateSecret(String secret) {
+        try {
+            //This line will throw an exception if it is not a signed JWS (as expected)
+            Jws<Claims> jwt = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(secret);
+        } catch (ExpiredJwtException e) {
+            return false;
+        } catch (UnsupportedJwtException e) {
+            return false;
+        } catch (MalformedJwtException e) {
+            return false;
+        } catch (SignatureException e) {
+            return false;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return true;
+    }
+
     private UsersResource getUserInstance() {
         return keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
     }
@@ -179,6 +234,8 @@ public class KeycloakService implements IKeycloakService {
                 if (createdUser.getAttributes().get("phone") != null)
                     userProfile.setPhone(createdUser.getAttributes().get("phone").get(0).toString());
                 return userProfile;
+            } else if (createdUserRes.getStatus() == 409) {
+                throw new UserExistsException(userDto.getEmail().trim());
             }
         } catch (Exception e) {
             log.error("Failed registering the user", e);

@@ -3,6 +3,8 @@ server:
 spring:
   application:
     name: tdei-auth
+    secret: "${SPRING_APPLICATION_SECRET}"
+    secret-ttl: "${SPRING_APPLICATION_SECRET_TTL}"
   config:
     import: optional:developer-local-properties.yaml
   datasource:
@@ -24,10 +26,10 @@ swagger:
   title: TDEI API
   version: v0.1
 Keycloak-client-endpoints:
-  user-url: https://tdei-keycloak.azurewebsites.net/realms/tdei/protocol/openid-connect/userinfo
-  token-url: https://tdei-keycloak.azurewebsites.net/realms/tdei/protocol/openid-connect/token
+  user-url: "${KEYCLOAK_CLIENT_ENDPOINTS_USER_URL}"
+  token-url: "${KEYCLOAK_CLIENT_ENDPOINTS_TOKEN_URL}"
 keycloak:
-  auth-server-url: https://tdei-keycloak.azurewebsites.net
+  auth-server-url: "${KEYCLOAK_AUTH_SERVER_URL}"
   realm: tdei
   enabled: true
   bearer-only: true

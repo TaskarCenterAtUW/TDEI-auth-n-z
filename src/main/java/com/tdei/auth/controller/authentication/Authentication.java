@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.security.InvalidKeyException;
 import java.util.Optional;
 
@@ -55,7 +56,7 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<UserProfile> registerUser(RegisterUser user) throws Exception {
+    public ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception {
         return ResponseEntity.ok(keycloakService.registerUser(user));
     }
 
@@ -70,5 +71,17 @@ public class Authentication implements IAuthentication {
     public ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken) {
         TokenResponse accessTokenResponse = keycloakService.reIssueToken(refreshToken.replaceAll("^\"|\"$", ""));
         return ResponseEntity.ok(accessTokenResponse);
+    }
+
+    @Override
+    public ResponseEntity<String> generateSecret() {
+        String secret = keycloakService.generateSecret();
+        return ResponseEntity.ok(secret);
+    }
+
+    @Override
+    public ResponseEntity<String> validateSecret(@RequestBody String secret) {
+        Boolean result = keycloakService.validateSecret(secret.replaceAll("^\"|\"$", ""));
+        return ResponseEntity.ok(result.toString());
     }
 }
