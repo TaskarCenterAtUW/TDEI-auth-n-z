@@ -130,5 +130,26 @@ public interface IAuthentication {
             consumes = {"application/json"},
             method = RequestMethod.POST)
     ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken);
+
+    @Operation(summary = "Generate secret token", description = "Returns time bound secret token.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns time bound secret token.", content = @Content(mediaType = "text/plain", schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "generateSecret",
+            produces = {"text/plain"},
+            method = RequestMethod.GET)
+    ResponseEntity<String> generateSecret();
+
+    @Operation(summary = "Validates secret token", description = "Returns boolean flag if secret token is valid.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns boolean flag if secret token is valid.", content = @Content(mediaType = "text/plain", schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "validateSecret",
+            produces = {"text/plain"},
+            consumes = {"application/json"},
+            method = RequestMethod.PUT)
+    ResponseEntity<String> validateSecret(@RequestBody String secret);
 }
 

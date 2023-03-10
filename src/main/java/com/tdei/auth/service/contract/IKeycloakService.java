@@ -22,4 +22,8 @@ public interface IKeycloakService {
     UserProfile getUserByUserName(String userName) throws Exception;
 
     TokenResponse reIssueToken(String refreshToken);
+
+    String generateSecret();
+
+    Boolean validateSecret(String secret);
 }
