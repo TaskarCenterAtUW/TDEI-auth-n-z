@@ -64,7 +64,7 @@ public class Authentication implements IAuthentication {
     public ResponseEntity<UserProfile> getUserByUserName(String userName) throws Exception {
         var profile = keycloakService.getUserByUserName(userName);
         if (profile == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(keycloakService.getUserByUserName(userName));
+        return ResponseEntity.ok(profile);
     }
 
     @Override
