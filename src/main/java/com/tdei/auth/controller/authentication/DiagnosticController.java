@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class CommonController {
+public class DiagnosticController {
 
     @Hidden
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.GET}, path = "/health/ping")
