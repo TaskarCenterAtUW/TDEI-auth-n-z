@@ -121,7 +121,7 @@ public interface IAuthentication {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
 
-            @ApiResponse(responseCode = "404", description = "Access token is invalid.", content = @Content),
+            @ApiResponse(responseCode = "401", description = "This request is unauthenticated.", content = @Content),
 
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "refreshToken",
