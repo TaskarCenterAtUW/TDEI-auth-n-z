@@ -13,7 +13,6 @@ import com.tdei.auth.model.common.dto.LoginModel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,7 +35,7 @@ public interface IAuthentication {
     @Operation(summary = "Get user profile by username", description = "Get user profile by username.  Returns the user profile. ",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
 
             @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
 
@@ -50,7 +49,7 @@ public interface IAuthentication {
     @Operation(summary = "User Registration API", description = "User Registration API.  Returns the user profile for the newly created user. ",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile for the newly created user.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile for the newly created user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
 
             @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
 
@@ -64,7 +63,7 @@ public interface IAuthentication {
     @Operation(summary = "Validates the API Key", description = "Validates the API Key.  Returns the user profile for the validated api key. ",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response - Returns the user profile for the validated api key.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the user profile for the validated api key.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
 
             @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
 
@@ -78,7 +77,7 @@ public interface IAuthentication {
     @Operation(summary = "Validates the API Key", description = "Validates the Access Token.  Returns the user profile for the validated access token. ",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response - Returns the user profile for the validated access token.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = UserProfile.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the user profile for the validated access token.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
 
             @ApiResponse(responseCode = "404", description = "Access token is invalid.", content = @Content),
 
@@ -92,7 +91,7 @@ public interface IAuthentication {
     @Operation(summary = "List available API versions", description = "Returns a json list of the versions of the TDEI API which are available.",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response - Returns the access token for the validated user.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = TokenResponse.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the access token for the validated user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
 
             @ApiResponse(responseCode = "401", description = "This request is unauthorized.", content = @Content),
 
@@ -106,7 +105,7 @@ public interface IAuthentication {
     @Operation(summary = "Check user access", description = "Returns boolean flag if user satisfies the roles.",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful response - Returns boolean flag if user satisfies the roles.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = Boolean.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns boolean flag if user satisfies the roles.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
 
             @ApiResponse(responseCode = "401", description = "This request is unauthorized.", content = @Content),
 
@@ -120,9 +119,9 @@ public interface IAuthentication {
     @Operation(summary = "Re-issue access token", description = "Re-issues access token provided refresh token",
             tags = {"Authentication"})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = TokenResponse.class)))),
+            @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
 
-            @ApiResponse(responseCode = "404", description = "Access token is invalid.", content = @Content),
+            @ApiResponse(responseCode = "401", description = "This request is unauthenticated.", content = @Content),
 
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "refreshToken",
