@@ -65,8 +65,7 @@ public class ApplicationProperties {
     @Data
     @NoArgsConstructor
     public static class KeycloakEndpointUrls {
-        private String userUrl;
-        private String tokenUrl;
+        private String baseUrl;
     }
 }
 
