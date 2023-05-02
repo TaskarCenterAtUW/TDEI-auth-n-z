@@ -67,7 +67,7 @@ public class KeycloakService implements IKeycloakService {
 
     public Optional<KUserInfo> getUserByAccessToken(String accessToken) {
         try {
-            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getUserUrl());
+            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints() + "/userinfo");
             ClientCreds creds = new ClientCreds();
             creds.setClient_id(applicationProperties.getKeycloak().getResource());
             creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
@@ -137,7 +137,7 @@ public class KeycloakService implements IKeycloakService {
 
     public TokenResponse reIssueToken(String refreshToken) {
         try {
-            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getTokenUrl());
+            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
             LinkedTreeMap user = keyclockTokenClient.refreshToken(
                     applicationProperties.getKeycloak().getResource(),
                     applicationProperties.getKeycloak().getCredentials().getSecret(),
