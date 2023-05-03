@@ -67,7 +67,7 @@ public class KeycloakService implements IKeycloakService {
 
     public Optional<KUserInfo> getUserByAccessToken(String accessToken) {
         try {
-            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints() + "/userinfo");
+            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
             ClientCreds creds = new ClientCreds();
             creds.setClient_id(applicationProperties.getKeycloak().getResource());
             creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
