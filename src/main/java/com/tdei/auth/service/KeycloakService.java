@@ -255,9 +255,9 @@ public class KeycloakService implements IKeycloakService {
             var userInfo = user.stream().findFirst().get();
 
             var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(userInfo);
-            if (userInfo.getAttributes().get("phone") != null)
+            if (userInfo.getAttributes() != null && userInfo.getAttributes().get("phone") != null)
                 userProfile.setPhone(userInfo.getAttributes().get("phone").stream().findFirst().get());
-            if (userInfo.getAttributes().get("x-api-key") != null)
+            if (userInfo.getAttributes() != null && userInfo.getAttributes().get("x-api-key") != null)
                 userProfile.setApiKey(userInfo.getAttributes().get("x-api-key").stream().findFirst().get());
             return userProfile;
         } catch (Exception e) {
