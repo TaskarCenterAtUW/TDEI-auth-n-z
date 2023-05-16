@@ -5,6 +5,27 @@ the
 user like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the
 users.
 
+## System flow diagram
+
+Below diagram depicts the system flow for Authentication service
+
+```mermaid
+graph LR;
+    A(Client) --->|Authenticate| B(Gateway) 
+    B -->|Authenticate| C(Auth Service) 
+    C -->|Authenticate| D(Keycloak Service)
+    C -->|Authorize| E(TDEI Database)
+```
+
+- Auth service is responsible for Authenticating and Authorizing the HTTP requests. Also, verifies the access token,
+  api-key and generates the secret token
+  for intra micro-service communication.
+- Gateway service is first point of contact for clients. Every request to gateway is Authenticated & Authorized against
+  the Auth service.
+- For Authentication, Auth service will interact with keycloak service for verification.
+    - Successful authentication auth servive will return with access_token & refresh_token.
+- For Authorization, Auth service will interact directly with TDEI database.
+
 ## System requirements
 
 | Software | Version |
@@ -38,7 +59,8 @@ Application secrets are not included in the code repository. Below are the instr
 
 ###### DEV
 
-Request for **developer-local-properties.yaml** file from Admin, which should be copied to below location
+Create **developer-local-properties.yaml** file under root of `resource` folder and set the application.yaml
+placeholders.
 
 ```src/main/resources/developer-local-properties.yaml```
 
@@ -95,22 +117,6 @@ Navigate to the below link for API documentation and API playground
 
 http://localhost:8080/swagger-ui/index.html
 
-## CI/CD [Azure Pipeline]
-
-### Continuous Integration (CI)
-
-Currently CI is not implemented as part of Azure pipeline. Test automated integration will be taken up in next
-development cycle.
-
-### Continuous Deployment (CD)
-
-Check-in to the master branch triggers the Azure pipeline [auth-n-z] CI/CD process which will build the source code,
-generate the package and create the docker image. Docker image will then be deployed to Azure app services.
-
-Process Flow Diagram:
-
-![](src/main/resources/static/images/deployment-pipeline.png)
-
-Development API documentation link
+## Development API documentation link
 
 https://tdei-gateway.azurewebsites.net/swagger-ui/index.html
