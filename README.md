@@ -62,7 +62,7 @@ Application secrets are not included in the code repository. Below are the instr
 
 ###### DEV
 
-Create **developer-local-properties.yaml** file under root of `resource` folder and set the application.yaml
+Create **developer-local-properties.yaml** file under root of `resource` folder and override the application.yaml
 placeholders.
 
 ```src/main/resources/developer-local-properties.yaml```
