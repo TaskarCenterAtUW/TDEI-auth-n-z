@@ -1,6 +1,6 @@
 # Introduction
 
-Authentication/Authorization API, this API is responsible for any service related to the authentication and
+Authentication/Authorization API, This API is responsible for any functionality related to the authentication and
 authorization of
 the
 user, like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the
@@ -21,12 +21,12 @@ graph LR;
 - `Auth Service` is responsible for Authenticating and Authorizing the HTTP requests. Also, verifies the access token,
   api-key on request and generates the secret token
   for intra micro-service communication.
-- `Gateway` service is first point of contact for clients. Every request to gateway is Authenticated & Authorized
+- `Gateway` service is the first point of contact for clients. Every request to gateway is Authenticated & Authorized
   against
   the `Auth Service`.
-- For Authentication, `Auth Service` will interact with `Keycloak Service` for verification.
-    - Successful authentication auth service will return with access_token & refresh_token as a response to requests.
-- For Authorization, `Auth Service` will interact directly with `TDEI Database`. `TDEI Database` maintains the user
+- For Authentication, Service interacts with `Keycloak Service` for verification.
+    - Successful authentication auth service returns access_token & refresh_token as a response to requests.
+- For Authorization, Service interacts directly with `TDEI Database`. `TDEI Database` maintains the user
   roles and permissions.
 
 ## System requirements
@@ -52,7 +52,7 @@ versions used.
 
 Clone the project from source controller
 
-```aidl
+```shell
 $ git clone https://github.com/TaskarCenterAtUW/TDEI-auth-n-z.git
 ```
 
