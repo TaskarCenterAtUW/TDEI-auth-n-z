@@ -69,7 +69,7 @@ placeholders.
 
 ###### PROD
 
-Secrets are configured as an environment variables on the deployment server.
+Secrets are configured as environment variables on the deployment server.
 
 ###### Environment variable
 
@@ -122,4 +122,4 @@ http://localhost:8080/swagger-ui/index.html
 
 ## Development API documentation link
 
-https://tdei-gateway.azurewebsites.net/swagger-ui/index.html
+https://tdei-auth-n-z-dev.azurewebsites.net/swagger-ui/index.html
