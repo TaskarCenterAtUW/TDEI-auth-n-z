@@ -23,6 +23,10 @@ public class UserManagementRepository implements IUserManagementRepository {
                     " WHERE ur.user_id = '" + userId + "'";
             return jdbcTemplate.query(sql, new RolesRowMapper());
         } catch (DataAccessException e) {
+            System.out.println(e);
+            throw new RuntimeException("Error fetching the roles.");
+        } catch (Exception e) {
+            System.out.println(e);
             throw new RuntimeException("Error fetching the roles.");
         }
     }

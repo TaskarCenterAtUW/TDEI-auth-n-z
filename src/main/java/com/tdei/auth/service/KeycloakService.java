@@ -23,7 +23,6 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -47,7 +46,7 @@ public class KeycloakService implements IKeycloakService {
     private final ApplicationProperties applicationProperties;
 
     @Autowired
-    UserManagementRepository userManagementRepository;
+    private UserManagementRepository userManagementRepository;
 
     private Key getSigningKey() {
         //The JWT signature algorithm we will be using to sign the token
@@ -76,6 +75,7 @@ public class KeycloakService implements IKeycloakService {
                     accessToken);
             return Optional.of(user);
         } catch (Exception e) {
+            System.out.println(e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
@@ -86,7 +86,7 @@ public class KeycloakService implements IKeycloakService {
 
         var userRoles = userManagementRepository.getUserRoles(userId);
 
-        //Sytem admin check, person is allowed to do all action
+        //System admin check, person is allowed to do all action
         if (userRoles.stream().anyMatch(x -> x.getRoleName().equalsIgnoreCase(RoleConstants.TDEI_ADMIN)))
             return true;
 
@@ -239,6 +239,8 @@ public class KeycloakService implements IKeycloakService {
             }
         } catch (Exception e) {
             log.error("Failed registering the user", e);
+            if (e instanceof UserExistsException)
+                throw e;
             throw new Exception("Failed registering the user");
         }
         return null;
@@ -264,15 +266,5 @@ public class KeycloakService implements IKeycloakService {
             log.error("Error fetching the user information", e);
             throw new Exception("Error fetching the user information");
         }
-    }
-
-    private UserResource getUserByUserId(String userId) {
-        UsersResource usersResource = getUserInstance();
-        UserResource user = usersResource.get(userId);
-
-        if (user == null)
-            return null;
-
-        return user;
     }
 }
