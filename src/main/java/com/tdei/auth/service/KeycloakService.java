@@ -75,7 +75,7 @@ public class KeycloakService implements IKeycloakService {
                     accessToken);
             return Optional.of(user);
         } catch (Exception e) {
-            System.out.println(e);
+            log.error("Error getting user by access token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
@@ -130,6 +130,7 @@ public class KeycloakService implements IKeycloakService {
 
             token = keycloak.tokenManager().getAccessToken();
         } catch (Exception ex) {
+            log.error("Error authenticating the user", ex);
             throw new InvalidCredentialsException("Invalid Credentials");
         }
         return token;
@@ -150,6 +151,7 @@ public class KeycloakService implements IKeycloakService {
             res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
             return res;
         } catch (Exception e) {
+            log.error("Error refreshing the token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
