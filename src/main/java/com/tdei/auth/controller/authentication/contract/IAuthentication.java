@@ -51,7 +51,7 @@ public interface IAuthentication {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile for the newly created user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
 
-            @ApiResponse(responseCode = "404", description = "API Key is invalid.", content = @Content),
+            @ApiResponse(responseCode = "409", description = "User already exists.", content = @Content),
 
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "registerUser",
@@ -106,9 +106,6 @@ public interface IAuthentication {
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response - Returns boolean flag if user satisfies the roles.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
-
-            @ApiResponse(responseCode = "401", description = "This request is unauthorized.", content = @Content),
-
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "hasPermission",
             produces = {"application/json"},
@@ -121,7 +118,7 @@ public interface IAuthentication {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
 
-            @ApiResponse(responseCode = "401", description = "This request is unauthenticated.", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Invalid access token.", content = @Content),
 
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "refreshToken",
