@@ -47,17 +47,22 @@ public class authControllerTest {
     @Test
     @DisplayName("When validating the invalid API key, Expect to throw InvalidKeyException")
     void validateApiKeyTest2() throws InvalidKeyException {
-
+        //Arrange
         when(keycloakService.getUserByApiKey("test_api_key")).thenThrow(new InvalidKeyException("Invalid API Key exception"));
+        //Act & Arrange
         assertThrows(InvalidKeyException.class, () -> authController.validateApiKey("test_api_key"));
     }
 
     @Test
     @DisplayName("When validating the valid Access Token, Expect to return HTTP Status 200 with user profile details")
     void validateAccessTokenTest() {
-
+        //Arrange
         when(keycloakService.getUserByAccessToken("test_access_token")).thenReturn(Optional.of(new KUserInfo()));
+
+        //Act
         var user = authController.validateAccessToken("test_access_token");
+
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
     }
@@ -65,19 +70,24 @@ public class authControllerTest {
     @Test
     @DisplayName("When validating the invalid Access Token, Expect to throw InvalidAccessTokenException")
     void validateAccessTokenTest2() {
-
+        //Arrange
         when(keycloakService.getUserByAccessToken("test_access_token")).thenThrow(new InvalidAccessTokenException("Invalid/Expired Access Token"));
+        //Act & Arrange
         assertThrows(InvalidAccessTokenException.class, () -> authController.validateAccessToken("test_access_token"));
     }
 
     @Test
     @DisplayName("When authenticating user with valid credentials, Expect to return HTTP Status 200 with TokenResponse details")
     void authenticateTest() {
+        //Arrange
         LoginModel loginModel = new LoginModel();
         loginModel.setUsername("test_username");
         loginModel.setPassword("test_password");
         when(keycloakService.getUserToken(loginModel)).thenReturn(new AccessTokenResponse());
+
+        //Act
         var user = authController.authenticate(loginModel);
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(TokenResponse.class);
     }
@@ -85,20 +95,26 @@ public class authControllerTest {
     @Test
     @DisplayName("When authenticating user with invalid credentials, Expect to throw InvalidCredentialsException")
     void authenticateTest2() {
+        //Arrange
         LoginModel loginModel = new LoginModel();
         loginModel.setUsername("test_username");
         loginModel.setPassword("test_password");
 
+        //Act
         when(keycloakService.getUserToken(loginModel)).thenThrow(new InvalidCredentialsException("Invalid Credentials"));
+        //Act & Arrange
         assertThrows(InvalidCredentialsException.class, () -> authController.authenticate(loginModel));
     }
 
     @Test
     @DisplayName("When verifying the user permission with valid userid, orgid and matching roles, Expect to return true")
     void hasPermissionTest() {
-
+        //Arrange
         when(keycloakService.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(true);
+
+        //Act
         var user = authController.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true));
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isTrue();
     }
@@ -106,9 +122,12 @@ public class authControllerTest {
     @Test
     @DisplayName("When verifying the user permission with valid userid, orgid and not matching roles, Expect to return false")
     void hasPermissionTest2() {
-
+        //Arrange
         when(keycloakService.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(false);
+
+        //Act
         var user = authController.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true));
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isFalse();
     }
@@ -116,9 +135,12 @@ public class authControllerTest {
     @Test
     @DisplayName("When refreshing the valid refresh token, Expect to return TokenResponse")
     void reIssueTokenTest() {
-
+        //Arrange
         when(keycloakService.reIssueToken("refresh_token")).thenReturn(new TokenResponse());
+
+        //Act
         var user = authController.reIssueToken("refresh_token");
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(TokenResponse.class);
     }
@@ -126,17 +148,21 @@ public class authControllerTest {
     @Test
     @DisplayName("When refreshing the invalid refresh token, Expect to throw InvalidAccessTokenException")
     void reIssueTokenTest2() {
-
+        //Arrange
         when(keycloakService.reIssueToken("refresh_token")).thenThrow(new InvalidAccessTokenException("Invalid/Expired Access Token"));
+        //Act & Arrange
         assertThrows(InvalidAccessTokenException.class, () -> authController.reIssueToken("refresh_token"));
     }
 
     @Test
     @DisplayName("When requested to generate secret token, Expect to return secret token")
     void generateSecretTest() {
-
+        //Arrange
         when(keycloakService.generateSecret()).thenReturn("new secret token");
+
+        //Act
         var user = authController.generateSecret();
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isNotBlank();
     }
@@ -144,9 +170,12 @@ public class authControllerTest {
     @Test
     @DisplayName("When requested to validate secret token, Expect to return true on success")
     void validateSecretTest() {
-
+        //Arrange
         when(keycloakService.validateSecret("secret_token")).thenReturn(true);
+
+        //Act
         var user = authController.validateSecret("secret_token");
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isEqualTo("true");
     }
@@ -154,6 +183,7 @@ public class authControllerTest {
     @Test
     @DisplayName("When requested to register new user, Expect to return UserProfile on success")
     void registerUserTest() throws Exception {
+        //Arrange
         RegisterUser registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("firstname");
@@ -162,7 +192,10 @@ public class authControllerTest {
         registerUser.setPassword("password");
 
         when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
+
+        //Act
         var user = authController.registerUser(registerUser);
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
     }
@@ -170,6 +203,7 @@ public class authControllerTest {
     @Test
     @DisplayName("When requested to register new user with existing email, Expect to throw UserExistsException")
     void registerUserTest2() throws Exception {
+        //Arrange
         RegisterUser registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("firstname");
@@ -178,15 +212,20 @@ public class authControllerTest {
         registerUser.setPassword("password");
 
         when(keycloakService.registerUser(registerUser)).thenThrow(new UserExistsException("test@email.com"));
+
+        //Act & Arrange
         assertThrows(UserExistsException.class, () -> authController.registerUser(registerUser));
     }
 
     @Test
     @DisplayName("When requested get user details by username, Expect to return UserProfile details on success")
     void getUserByUserNameTest() throws Exception {
-
+        //Arrange
         when(keycloakService.getUserByUserName("user_name")).thenReturn(new UserProfile());
+
+        //Act
         var user = authController.getUserByUserName("user_name");
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
     }
@@ -194,9 +233,12 @@ public class authControllerTest {
     @Test
     @DisplayName("When requested get user details by invalid username, Expect to return HTTP Status 404")
     void getUserByUserNameTest2() throws Exception {
-
+        //Arrange
         when(keycloakService.getUserByUserName("user_name")).thenReturn(null);
+
+        //Act
         var user = authController.getUserByUserName("user_name");
+        //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

@@ -114,7 +114,16 @@ $ cd target
 $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 ```
 
-### 3. Browse API documentation
+### 3. Running Test Cases
+
+1. Ensure [Building the server](#1-building-the-server) step is executed.
+2. Run below command to test
+
+```
+$ mvn test
+```
+
+### 4. Browse API documentation
 
 Navigate to the below link for API documentation and API playground
 
