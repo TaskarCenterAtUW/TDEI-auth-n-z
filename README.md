@@ -123,6 +123,8 @@ $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 $ mvn test
 ```
 
+#### 3.1 Running Integration tests
+
 ### 4. Browse API documentation
 
 Navigate to the below link for API documentation and API playground
@@ -132,3 +134,11 @@ http://localhost:8080/swagger-ui/index.html
 ## Development API documentation link
 
 https://tdei-auth-n-z-dev.azurewebsites.net/swagger-ui/index.html
+
+
+### Integration test cases enumeration
+
+| Component | Unit under test | Scenario | Expectation | Status |
+|-|-|-|-|-|
+| Auth-n-z | Key Cloak service | When connected to Keycloack service | Expect to get response for keycloack service | |
+| Auth-n-z | HTTP service | When requested for health service | Expect to get response for HTTP request |
