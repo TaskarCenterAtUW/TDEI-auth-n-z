@@ -1,4 +1,4 @@
-package com.tdei.auth.controller;
+package unit.auth.controller;
 
 import com.tdei.auth.controller.authentication.Authentication;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
@@ -11,6 +11,7 @@ import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.representations.AccessTokenResponse;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+@Tag("Unit")
 @ExtendWith(MockitoExtension.class)
 public class authControllerTest {
     @Mock
