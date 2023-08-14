@@ -1,4 +1,4 @@
-package com.tdei.auth.service;
+package unit.auth.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -9,11 +9,13 @@ import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsExceptio
 import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.UserRoles;
 import com.tdei.auth.repository.UserManagementRepository;
+import com.tdei.auth.service.KeycloakService;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
@@ -41,6 +43,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
+@Tag("Unit")
 @ExtendWith(MockitoExtension.class)
 public class KeycloakServiceTest {
     private static WireMockServer wireMockServer;
