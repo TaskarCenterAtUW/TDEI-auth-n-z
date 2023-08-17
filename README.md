@@ -73,18 +73,16 @@ Secrets are configured as environment variables on the deployment server.
 
 ###### Environment variable
 
-|  Name   | Description                          |
-|-----|--------------------------------------|
-|  KEYCLOAK_CREDENTIALS_SECRET | Keycloak secret from portal          |
-|  SPRING_DATASOURCE_URL  | Database JDBC URL                    |
-|  SPRING_DATASOURCE_USERNAME | Database user name                   |
-|  SPRING_DATASOURCE_PASSWORD | Database password                    |
-|  SPRING_APPLICATION_SECRET | Secret key for token generation      |
-|  SPRING_APPLICATION_SECRET_TTL | Secret token time to live in seconds |
-|  KEYCLOAK_CLIENT_ENDPOINTS_USER_URL | Keycloak user url                    |
-|  KEYCLOAK_CLIENT_ENDPOINTS_TOKEN_URL | Keycloak Token url                   |
-|  KEYCLOAK_AUTH_SERVER_URL | Keycloak auth server url             |
-|  SPRING_PROFILES_ACTIVE | Active profile [dev,stage,prod]      |
+| Name                                | Description                          |
+|-------------------------------------|--------------------------------------|
+| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak secret from portal          |
+| SPRING_DATASOURCE_URL               | Database JDBC URL                    |
+| SPRING_DATASOURCE_USERNAME          | Database user name                   |
+| SPRING_DATASOURCE_PASSWORD          | Database password                    |
+| SPRING_APPLICATION_SECRET           | Secret key for token generation      |
+| SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds |
+| KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                    |
+| KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url             |
 
 ## Building the project
 
@@ -114,7 +112,7 @@ $ cd target
 $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 ```
 
-### 3. Running Test Cases
+### 3. Running Unit Test Cases
 
 1. Ensure [Building the server](#1-building-the-server) step is executed.
 2. Run below command to test
@@ -123,7 +121,25 @@ $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 $ mvn test
 ```
 
-### 4. Browse API documentation
+Note: Running unit test does not require environment variable setup
+
+### 3. Running Integration Test Cases
+
+1. Running the integration test has below-mentioned environment variable dependency
+
+|  Name   | Description                          |
+|-----|--------------------------------------|
+|  KEYCLOAK_CREDENTIALS_SECRET | Keycloak secret from portal          |
+|  KEYCLOAK_AUTH_SERVER_URL | Keycloak auth server url             |
+
+2. Ensure [Building the server](#1-building-the-server) step is executed.
+3. Run below command to test
+
+```
+$  mvn verify -P integration-tests
+```
+
+### 5. Browse API documentation
 
 Navigate to the below link for API documentation and API playground
 
