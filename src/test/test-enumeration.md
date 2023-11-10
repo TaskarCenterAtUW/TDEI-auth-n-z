@@ -29,9 +29,11 @@ InvalidAccessTokenException |:white_check_mark:|
 200 with TokenResponse details |:white_check_mark:|
 | Controller | Authenticate | Functional| When authenticating user with invalid credentials| Expect to throw
 InvalidCredentialsException |:white_check_mark:|
-| Controller | Has permission | Functional| When verifying the user permission with valid userid, orgid and matching
+| Controller | Has permission | Functional| When verifying the user permission with valid userid, projectGroupId and
+matching
 roles| Expect to return true |:white_check_mark:|
-| Controller | Has permission | Functional| When verifying the user permission with valid userid, orgid and not matching
+| Controller | Has permission | Functional| When verifying the user permission with valid userid, projectGroupId and not
+matching
 roles| Expect to return false |:white_check_mark:|
 | Controller | Refresh Token | Functional| When refreshing the valid refresh token| Expect to return TokenResponse |:
 white_check_mark:|

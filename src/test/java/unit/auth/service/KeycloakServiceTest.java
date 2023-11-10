@@ -78,7 +78,7 @@ public class KeycloakServiceTest {
         var flexDataRole = new UserRoles();
         flexDataRole.setRoleName(roleName);
         flexDataRole.setUserId("test_user_id");
-        flexDataRole.setOrgId("test_org_id");
+        flexDataRole.setProjectGroupId("test_project_group_id");
         return flexDataRole;
     }
 

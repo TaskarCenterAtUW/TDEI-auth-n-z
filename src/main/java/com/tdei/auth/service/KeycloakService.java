@@ -81,7 +81,7 @@ public class KeycloakService implements IKeycloakService {
     }
 
     @Override
-    public Boolean hasPermission(String userId, Optional<String> orgId, String[] roles, Optional<Boolean> affirmative) {
+    public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative) {
         Boolean satisfied = false;
 
         var userRoles = userManagementRepository.getUserRoles(userId);
@@ -91,8 +91,8 @@ public class KeycloakService implements IKeycloakService {
             return true;
 
         //Check if role exists
-        if (orgId.isPresent() && !orgId.get().isEmpty()) {
-            if (userRoles.stream().anyMatch(x -> (x.getOrgId().equals(orgId.get())) &&
+        if (projectGroupId.isPresent() && !projectGroupId.get().isEmpty()) {
+            if (userRoles.stream().anyMatch(x -> (x.getProjectGroupId().equals(projectGroupId.get())) &&
                     (affirmative.isPresent() && affirmative.get() ?
                             Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
                             : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))

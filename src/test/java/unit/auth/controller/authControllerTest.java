@@ -109,26 +109,26 @@ public class authControllerTest {
     }
 
     @Test
-    @DisplayName("When verifying the user permission with valid userid, orgid and matching roles, Expect to return true")
+    @DisplayName("When verifying the user permission with valid userid, projectGroupId and matching roles, Expect to return true")
     void hasPermissionTest() {
         //Arrange
-        when(keycloakService.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(true);
+        when(keycloakService.hasPermission("userId", Optional.of("projectGroupId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(true);
 
         //Act
-        var user = authController.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true));
+        var user = authController.hasPermission("userId", Optional.of("projectGroupId"), new String[]{"flex_data_generator"}, Optional.of(true));
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isTrue();
     }
 
     @Test
-    @DisplayName("When verifying the user permission with valid userid, orgid and not matching roles, Expect to return false")
+    @DisplayName("When verifying the user permission with valid userid, projectGroupId and not matching roles, Expect to return false")
     void hasPermissionTest2() {
         //Arrange
-        when(keycloakService.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(false);
+        when(keycloakService.hasPermission("userId", Optional.of("projectGroupId"), new String[]{"flex_data_generator"}, Optional.of(true))).thenReturn(false);
 
         //Act
-        var user = authController.hasPermission("userId", Optional.of("agencyId"), new String[]{"flex_data_generator"}, Optional.of(true));
+        var user = authController.hasPermission("userId", Optional.of("projectGroupId"), new String[]{"flex_data_generator"}, Optional.of(true));
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isFalse();
