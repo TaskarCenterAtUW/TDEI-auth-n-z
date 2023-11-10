@@ -195,7 +195,7 @@ public class KeycloakServiceTest {
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid , orgId and roles, Expect to return true")
+    @DisplayName("When validating user permissions with valid userid , projectGroupId and roles, Expect to return true")
     void hasPermissionTest() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -203,14 +203,14 @@ public class KeycloakServiceTest {
         when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
 
         //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_org_id"), new String[]{"flex_data_generator"}, Optional.of(true));
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator"}, Optional.of(true));
 
         //Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, role and invalid orgId, Expect to return false")
+    @DisplayName("When validating user permissions with valid userid, role and invalid projectGroupId, Expect to return false")
     void hasPermissionTest2() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -218,14 +218,14 @@ public class KeycloakServiceTest {
         when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
 
         //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_org_id_2"), new String[]{"flex_data_generator"}, Optional.of(true));
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id_2"), new String[]{"flex_data_generator"}, Optional.of(true));
 
         //Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, role and empty orgId, Expect to return true")
+    @DisplayName("When validating user permissions with valid userid, role and empty projectGroupId, Expect to return true")
     void hasPermissionTest3() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -240,7 +240,7 @@ public class KeycloakServiceTest {
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, orgId and invalid roles, Expect to return false")
+    @DisplayName("When validating user permissions with valid userid, projectGroupId and invalid roles, Expect to return false")
     void hasPermissionTest4() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -248,14 +248,14 @@ public class KeycloakServiceTest {
         when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
 
         //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_org_id"), new String[]{"pathways_data_generator"}, Optional.of(true));
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"pathways_data_generator"}, Optional.of(true));
 
         //Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, empty orgId and invalid roles, Expect to return false")
+    @DisplayName("When validating user permissions with valid userid, empty projectGroupId and invalid roles, Expect to return false")
     void hasPermissionTest5() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -270,7 +270,7 @@ public class KeycloakServiceTest {
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, orgId , must exists roles and on partial role match, Expect to return false")
+    @DisplayName("When validating user permissions with valid userid, projectGroupId , must exists roles and on partial role match, Expect to return false")
     void hasPermissionTest6() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -278,14 +278,14 @@ public class KeycloakServiceTest {
         when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
 
         //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_org_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
 
         //Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, orgId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
+    @DisplayName("When validating user permissions with valid userid, projectGroupId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
     void hasPermissionTest8() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -293,14 +293,14 @@ public class KeycloakServiceTest {
         when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
 
         //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_org_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
 
         //Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, empty orgId , must exists roles and on partial role match, Expect to return false")
+    @DisplayName("When validating user permissions with valid userid, empty projectGroupId , must exists roles and on partial role match, Expect to return false")
     void hasPermissionTest7() {
         //Arrange
         MockitoAnnotations.openMocks(this);
@@ -315,7 +315,7 @@ public class KeycloakServiceTest {
     }
 
     @Test
-    @DisplayName("When validating user permissions with valid userid, empty orgId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
+    @DisplayName("When validating user permissions with valid userid, empty projectGroupId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
     void hasPermissionTest9() {
         //Arrange
         MockitoAnnotations.openMocks(this);
