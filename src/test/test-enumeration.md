@@ -29,9 +29,11 @@ InvalidAccessTokenException |:white_check_mark:|
 200 with TokenResponse details |:white_check_mark:|
 | Controller | Authenticate | Functional| When authenticating user with invalid credentials| Expect to throw
 InvalidCredentialsException |:white_check_mark:|
-| Controller | Has permission | Functional| When verifying the user permission with valid userid, orgid and matching
+| Controller | Has permission | Functional| When verifying the user permission with valid userid, projectGroupId and
+matching
 roles| Expect to return true |:white_check_mark:|
-| Controller | Has permission | Functional| When verifying the user permission with valid userid, orgid and not matching
+| Controller | Has permission | Functional| When verifying the user permission with valid userid, projectGroupId and not
+matching
 roles| Expect to return false |:white_check_mark:|
 | Controller | Refresh Token | Functional| When refreshing the valid refresh token| Expect to return TokenResponse |:
 white_check_mark:|
@@ -62,23 +64,30 @@ throw InvalidAccessTokenException |:white_check_mark:|
 userinfo |:white_check_mark:|
 | Keycloak Service | Get user by username | Functional| When searching for the user by invalid user name| Expect to
 return null |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid , orgId and roles|
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid , projectGroupId
+and roles|
 Expect to return true |:white_check_mark:|
 | Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, role and invalid
-orgId| Expect to return false|:white_check_mark:|
+projectGroupId| Expect to return false|:white_check_mark:|
 | Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, role and empty
-orgId| Expect to return true |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, orgId and invalid
+projectGroupId| Expect to return true |:white_check_mark:|
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, projectGroupId and
+invalid
 roles| Expect to return false |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty orgId and
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty
+projectGroupId and
 invalid roles| Expect to return false |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, orgId , must
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, projectGroupId ,
+must
 exists roles and on partial role match| Expect to return false |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, orgId , must
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, projectGroupId ,
+must
 exists roles and on partial role match| Expect to return true when affirmative flag is false |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty orgId , must
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty
+projectGroupId , must
 exists roles and on partial role match| Expect to return false |:white_check_mark:|
-| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty orgId , must
+| Keycloak Service | Has permission | Functional| When validating user permissions with valid userid, empty
+projectGroupId , must
 exists roles and on partial role match| Expect to return true when affirmative flag is false |:white_check_mark:|
 | Keycloak Service | Has permission | Functional| When validating user permissions where user is admin| Expect to return
 true |:white_check_mark:|

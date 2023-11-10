@@ -11,7 +11,7 @@ public class RolesRowMapper implements RowMapper<UserRoles> {
     public UserRoles mapRow(ResultSet rs, int arg1) throws SQLException {
         UserRoles emp = new UserRoles();
         emp.setRoleId(rs.getString("role_id"));
-        emp.setOrgId(rs.getString("org_id"));
+        emp.setProjectGroupId(rs.getString("project_group_id"));
         emp.setUserId(rs.getString("user_id"));
         emp.setRoleName(rs.getString("name"));
         return emp;

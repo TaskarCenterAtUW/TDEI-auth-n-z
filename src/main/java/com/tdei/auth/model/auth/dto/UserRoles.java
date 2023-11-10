@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class UserRoles {
     private String userId;
-    private String orgId;
+    private String projectGroupId;
     private String roleId;
     private String roleName;
 }

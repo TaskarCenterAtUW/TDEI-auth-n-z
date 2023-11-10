@@ -110,7 +110,7 @@ public interface IAuthentication {
     @RequestMapping(value = "hasPermission",
             produces = {"application/json"},
             method = RequestMethod.GET)
-    ResponseEntity<Boolean> hasPermission(@Parameter(in = ParameterIn.QUERY, description = "User identifier") @RequestParam() String userId, @Parameter(in = ParameterIn.QUERY, description = "Agency Id") @RequestParam(required = false) Optional<String> agencyId, @Parameter(in = ParameterIn.QUERY, description = "Roles") @Size(min = 1) @RequestParam() String[] roles, @Parameter(in = ParameterIn.QUERY, description = "Affirmative, true to satisfy atleast one role otherwise all roles") @RequestParam(required = false, defaultValue = "false") Optional<Boolean> affirmative);
+    ResponseEntity<Boolean> hasPermission(@Parameter(in = ParameterIn.QUERY, description = "User identifier") @RequestParam() String userId, @Parameter(in = ParameterIn.QUERY, description = "Project Group Id") @RequestParam(required = false) Optional<String> projectGroupId, @Parameter(in = ParameterIn.QUERY, description = "Roles") @Size(min = 1) @RequestParam() String[] roles, @Parameter(in = ParameterIn.QUERY, description = "Affirmative, true to satisfy atleast one role otherwise all roles") @RequestParam(required = false, defaultValue = "false") Optional<Boolean> affirmative);
 
 
     @Operation(summary = "Re-issue access token", description = "Re-issues access token provided refresh token",
