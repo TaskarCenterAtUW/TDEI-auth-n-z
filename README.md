@@ -1,9 +1,33 @@
 # Introduction
 
-Authentication/Authorization API, this API is responsible any service related to the authentication and authorization of
+Authentication/Authorization API, This API is responsible for any functionality related to the authentication and
+authorization of
 the
-user like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the
+user, like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the
 users.
+
+## System flow diagram
+
+Below diagram depicts the system flow for Authentication service
+
+```mermaid
+graph LR;
+    A(Client) --->|Authenticate| B(Gateway) 
+    B -->|Authenticate| C(Auth Service) 
+    C -->|Authenticate| D(Keycloak Service)
+    C -->|Authorize| E(TDEI Database)
+```
+
+- `Auth Service` is responsible for Authenticating and Authorizing the HTTP requests. Also, verifies the access token,
+  api-key on request and generates the secret token
+  for intra micro-service communication.
+- `Gateway` service is the first point of contact for clients. Every request to gateway is Authenticated & Authorized
+  against
+  the `Auth Service`.
+- For Authentication, Service interacts with `Keycloak Service` for verification.
+    - Successful authentication auth service returns access_token & refresh_token as a response to requests.
+- For Authorization, Service interacts directly with `TDEI Database`. `TDEI Database` maintains the user
+  roles and permissions.
 
 ## System requirements
 
@@ -28,8 +52,8 @@ versions used.
 
 Clone the project from source controller
 
-```aidl
-$ git clone https://TDEI-UW@dev.azure.com/TDEI-UW/TDEI/_git/gateway
+```shell
+$ git clone https://github.com/TaskarCenterAtUW/TDEI-auth-n-z.git
 ```
 
 ## Secrets
@@ -38,28 +62,27 @@ Application secrets are not included in the code repository. Below are the instr
 
 ###### DEV
 
-Request for **developer-local-properties.yaml** file from Admin, which should be copied to below location
+Create **developer-local-properties.yaml** file under root of `resource` folder and override the application.yaml
+placeholders.
 
 ```src/main/resources/developer-local-properties.yaml```
 
 ###### PROD
 
-Secrets will be set as an environment variables on the deployment environment.
+Secrets are configured as environment variables on the deployment server.
 
 ###### Environment variable
 
-|  Name   | Description                          |
-|-----|--------------------------------------|
-|  KEYCLOAK_CREDENTIALS_SECRET | Keycloak secret from portal          |
-|  SPRING_DATASOURCE_URL  | Database JDBC URL                    |
-|  SPRING_DATASOURCE_USERNAME | Database user name                   |
-|  SPRING_DATASOURCE_PASSWORD | Database password                    |
-|  SPRING_APPLICATION_SECRET | Secret key for token generation      |
-|  SPRING_APPLICATION_SECRET_TTL | Secret token time to live in seconds |
-|  KEYCLOAK_CLIENT_ENDPOINTS_USER_URL | Keycloak user url                    |
-|  KEYCLOAK_CLIENT_ENDPOINTS_TOKEN_URL | Keycloak Token url                   |
-|  KEYCLOAK_AUTH_SERVER_URL | Keycloak auth server url             |
-|  SPRING_PROFILES_ACTIVE | Active profile [dev,stage,prod]      |
+| Name                                | Description                          |
+|-------------------------------------|--------------------------------------|
+| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak secret from portal          |
+| SPRING_DATASOURCE_URL               | Database JDBC URL                    |
+| SPRING_DATASOURCE_USERNAME          | Database user name                   |
+| SPRING_DATASOURCE_PASSWORD          | Database password                    |
+| SPRING_APPLICATION_SECRET           | Secret key for token generation      |
+| SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds |
+| KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                    |
+| KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url             |
 
 ## Building the project
 
@@ -89,28 +112,39 @@ $ cd target
 $ java -jar -Dspring.profiles.active=dev gateway-0.0.1.jar
 ```
 
-### 3. Browse API documentation
+### 3. Running Unit Test Cases
+
+1. Ensure [Building the server](#1-building-the-server) step is executed.
+2. Run below command to test
+
+```
+$ mvn test
+```
+
+Note: Running unit test does not require environment variable setup
+
+### 3. Running Integration Test Cases
+
+1. Running the integration test has below-mentioned environment variable dependency
+
+|  Name   | Description                          |
+|-----|--------------------------------------|
+|  KEYCLOAK_CREDENTIALS_SECRET | Keycloak secret from portal          |
+|  KEYCLOAK_AUTH_SERVER_URL | Keycloak auth server url             |
+
+2. Ensure [Building the server](#1-building-the-server) step is executed.
+3. Run below command to test
+
+```
+$  mvn verify -P integration-tests
+```
+
+### 5. Browse API documentation
 
 Navigate to the below link for API documentation and API playground
 
 http://localhost:8080/swagger-ui/index.html
 
-## CI/CD [Azure Pipeline]
+## Development API documentation link
 
-### Continuous Integration (CI)
-
-Currently CI is not implemented as part of Azure pipeline. Test automated integration will be taken up in next
-development cycle.
-
-### Continuous Deployment (CD)
-
-Check-in to the master branch triggers the Azure pipeline [auth-n-z] CI/CD process which will build the source code,
-generate the package and create the docker image. Docker image will then be deployed to Azure app services.
-
-Process Flow Diagram:
-
-![](src/main/resources/static/images/deployment-pipeline.png)
-
-Development API documentation link
-
-https://tdei-gateway.azurewebsites.net/swagger-ui/index.html
+https://tdei-auth-n-z-dev.azurewebsites.net/swagger-ui/index.html

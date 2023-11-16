@@ -51,8 +51,8 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<Boolean> hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative) {
-        return ResponseEntity.ok(keycloakService.hasPermission(userId, agencyId, roles, affirmative));
+    public ResponseEntity<Boolean> hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative) {
+        return ResponseEntity.ok(keycloakService.hasPermission(userId, projectGroupId, roles, affirmative));
     }
 
     @Override

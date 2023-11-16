@@ -23,7 +23,6 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -47,7 +46,7 @@ public class KeycloakService implements IKeycloakService {
     private final ApplicationProperties applicationProperties;
 
     @Autowired
-    UserManagementRepository userManagementRepository;
+    private UserManagementRepository userManagementRepository;
 
     private Key getSigningKey() {
         //The JWT signature algorithm we will be using to sign the token
@@ -67,7 +66,7 @@ public class KeycloakService implements IKeycloakService {
 
     public Optional<KUserInfo> getUserByAccessToken(String accessToken) {
         try {
-            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getUserUrl());
+            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
             ClientCreds creds = new ClientCreds();
             creds.setClient_id(applicationProperties.getKeycloak().getResource());
             creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
@@ -76,23 +75,24 @@ public class KeycloakService implements IKeycloakService {
                     accessToken);
             return Optional.of(user);
         } catch (Exception e) {
+            log.error("Error getting user by access token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
 
     @Override
-    public Boolean hasPermission(String userId, Optional<String> orgId, String[] roles, Optional<Boolean> affirmative) {
+    public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative) {
         Boolean satisfied = false;
 
         var userRoles = userManagementRepository.getUserRoles(userId);
 
-        //Sytem admin check, person is allowed to do all action
+        //System admin check, person is allowed to do all action
         if (userRoles.stream().anyMatch(x -> x.getRoleName().equalsIgnoreCase(RoleConstants.TDEI_ADMIN)))
             return true;
 
         //Check if role exists
-        if (orgId.isPresent() && !orgId.get().isEmpty()) {
-            if (userRoles.stream().anyMatch(x -> (x.getOrgId().equals(orgId.get())) &&
+        if (projectGroupId.isPresent() && !projectGroupId.get().isEmpty()) {
+            if (userRoles.stream().anyMatch(x -> (x.getProjectGroupId().equals(projectGroupId.get())) &&
                     (affirmative.isPresent() && affirmative.get() ?
                             Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
                             : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
@@ -130,6 +130,7 @@ public class KeycloakService implements IKeycloakService {
 
             token = keycloak.tokenManager().getAccessToken();
         } catch (Exception ex) {
+            log.error("Error authenticating the user", ex);
             throw new InvalidCredentialsException("Invalid Credentials");
         }
         return token;
@@ -137,7 +138,7 @@ public class KeycloakService implements IKeycloakService {
 
     public TokenResponse reIssueToken(String refreshToken) {
         try {
-            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getTokenUrl());
+            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
             LinkedTreeMap user = keyclockTokenClient.refreshToken(
                     applicationProperties.getKeycloak().getResource(),
                     applicationProperties.getKeycloak().getCredentials().getSecret(),
@@ -150,6 +151,7 @@ public class KeycloakService implements IKeycloakService {
             res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
             return res;
         } catch (Exception e) {
+            log.error("Error refreshing the token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
@@ -239,6 +241,8 @@ public class KeycloakService implements IKeycloakService {
             }
         } catch (Exception e) {
             log.error("Failed registering the user", e);
+            if (e instanceof UserExistsException)
+                throw e;
             throw new Exception("Failed registering the user");
         }
         return null;
@@ -255,24 +259,14 @@ public class KeycloakService implements IKeycloakService {
             var userInfo = user.stream().findFirst().get();
 
             var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(userInfo);
-            if (userInfo.getAttributes().get("phone") != null)
+            if (userInfo.getAttributes() != null && userInfo.getAttributes().get("phone") != null)
                 userProfile.setPhone(userInfo.getAttributes().get("phone").stream().findFirst().get());
-            if (userInfo.getAttributes().get("x-api-key") != null)
+            if (userInfo.getAttributes() != null && userInfo.getAttributes().get("x-api-key") != null)
                 userProfile.setApiKey(userInfo.getAttributes().get("x-api-key").stream().findFirst().get());
             return userProfile;
         } catch (Exception e) {
             log.error("Error fetching the user information", e);
             throw new Exception("Error fetching the user information");
         }
-    }
-
-    private UserResource getUserByUserId(String userId) {
-        UsersResource usersResource = getUserInstance();
-        UserResource user = usersResource.get(userId);
-
-        if (user == null)
-            return null;
-
-        return user;
     }
 }

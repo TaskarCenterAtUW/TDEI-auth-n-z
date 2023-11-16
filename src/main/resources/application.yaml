@@ -26,8 +26,7 @@ swagger:
   title: TDEI API
   version: v0.1
 Keycloak-client-endpoints:
-  user-url: "${KEYCLOAK_CLIENT_ENDPOINTS_USER_URL}"
-  token-url: "${KEYCLOAK_CLIENT_ENDPOINTS_TOKEN_URL}"
+  base-url: "${KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL}"
 keycloak:
   auth-server-url: "${KEYCLOAK_AUTH_SERVER_URL}"
   realm: tdei

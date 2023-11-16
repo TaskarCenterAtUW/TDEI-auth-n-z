@@ -15,7 +15,7 @@ public interface IKeycloakService {
 
     Optional<KUserInfo> getUserByAccessToken(String accessToken);
 
-    Boolean hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative);
+    Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative);
 
     UserProfile registerUser(RegisterUser userDto) throws Exception;
 
