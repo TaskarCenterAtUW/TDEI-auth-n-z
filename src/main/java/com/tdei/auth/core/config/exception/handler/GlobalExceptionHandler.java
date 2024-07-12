@@ -165,7 +165,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(UserExistsException.class)
-    protected ResponseEntity<Object> handleUserExistsException(UserExistsException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+    protected ResponseEntity<Object> handleUserExistsException(UserExistsException ex, WebRequest request) {
 
         List<String> details = new ArrayList<>();
         details.add(ex.getMessage());
