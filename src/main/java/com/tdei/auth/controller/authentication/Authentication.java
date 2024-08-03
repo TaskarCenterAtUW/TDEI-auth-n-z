@@ -4,6 +4,7 @@ import com.tdei.auth.controller.authentication.contract.IAuthentication;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.mapper.TokenMapper;
 import com.tdei.auth.mapper.UserProfileMapper;
+import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.security.InvalidKeyException;
 import java.util.Optional;
 
@@ -49,8 +51,37 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<Boolean> hasPermission(String userId, Optional<String> agencyId, String[] roles, Optional<Boolean> affirmative) {
-        return ResponseEntity.ok(keycloakService.hasPermission(userId, agencyId, roles, affirmative));
+    public ResponseEntity<Boolean> hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative) {
+        return ResponseEntity.ok(keycloakService.hasPermission(userId, projectGroupId, roles, affirmative));
     }
 
+    @Override
+    public ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception {
+        return ResponseEntity.ok(keycloakService.registerUser(user));
+    }
+
+    @Override
+    public ResponseEntity<UserProfile> getUserByUserName(String userName) throws Exception {
+        var profile = keycloakService.getUserByUserName(userName);
+        if (profile == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(profile);
+    }
+
+    @Override
+    public ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken) {
+        TokenResponse accessTokenResponse = keycloakService.reIssueToken(refreshToken.replaceAll("^\"|\"$", ""));
+        return ResponseEntity.ok(accessTokenResponse);
+    }
+
+    @Override
+    public ResponseEntity<String> generateSecret() {
+        String secret = keycloakService.generateSecret();
+        return ResponseEntity.ok(secret);
+    }
+
+    @Override
+    public ResponseEntity<String> validateSecret(@RequestBody String secret) {
+        Boolean result = keycloakService.validateSecret(secret.replaceAll("^\"|\"$", ""));
+        return ResponseEntity.ok(result.toString());
+    }
 }

@@ -1,14 +1,14 @@
 
 on:
   pull_request:
-    branches: [dev]
+    branches: [stage]
     types:
       - closed
   workflow_dispatch:
 
 jobs:
   Build:
-    environment: Development
+    environment: Stage
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true    
     steps:
@@ -32,14 +32,14 @@ jobs:
   Deploy:
     needs: Build
     environment: 
-      name: Development
+      name: Stage
     runs-on: ubuntu-latest
     steps:
     - name: Login to Azure
       uses: azure/login@v2.0.0
       with:
         creds: ${{secrets.TDEI_CORE_AZURE_CREDS}}
-    - name: Deploy to Dev
+    - name: Deploy to Stage
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
