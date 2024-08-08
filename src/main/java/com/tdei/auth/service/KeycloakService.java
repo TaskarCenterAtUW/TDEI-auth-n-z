@@ -255,8 +255,12 @@ public class KeycloakService implements IKeycloakService {
                 var createdUser = usersResource.get(userId).toRepresentation();
 
                 var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(createdUser);
-                if (createdUser.getAttributes().get("phone") != null)
-                    userProfile.setPhone(createdUser.getAttributes().get("phone").get(0).toString());
+
+                if (createdUser.getAttributes() != null && createdUser.getAttributes().get("phone") != null)
+                    userProfile.setPhone(createdUser.getAttributes().get("phone").stream().findFirst().get());
+                if (createdUser.getAttributes() != null && createdUser.getAttributes().get("x-api-key") != null)
+                    userProfile.setApiKey(createdUser.getAttributes().get("x-api-key").stream().findFirst().get());
+                
                 return userProfile;
             } else if (createdUserRes.getStatus() == 409) {
                 throw new UserExistsException(userDto.getEmail().trim());
