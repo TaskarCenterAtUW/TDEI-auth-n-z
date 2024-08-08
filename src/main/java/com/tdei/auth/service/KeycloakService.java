@@ -5,6 +5,7 @@ import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
 import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
 import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
@@ -12,6 +13,7 @@ import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
+import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
@@ -31,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.NotFoundException;
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -196,6 +199,25 @@ public class KeycloakService implements IKeycloakService {
 
     private UsersResource getUserInstance() {
         return keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
+    }
+
+    public Boolean resetCredentials(ResetCredentialModel resetCredentialModel) throws Exception {
+        try {
+            UsersResource usersResource = getUserInstance();
+            var user = usersResource.get(resetCredentialModel.getUserId());
+            CredentialRepresentation cred = new CredentialRepresentation();
+            cred.setType(CredentialRepresentation.PASSWORD);
+            cred.setValue(resetCredentialModel.getPassword());
+            cred.setTemporary(false);
+            user.resetPassword(cred);
+            return true;
+        } catch (NotFoundException e) {
+            log.error("User not found", e);
+            throw new ResourceNotFoundException("User not found");
+        } catch (Exception e) {
+            log.error("Error resetting the password", e);
+            throw new Exception("Error resetting the password");
+        }
     }
 
     public UserProfile registerUser(RegisterUser userDto) throws Exception {
