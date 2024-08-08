@@ -8,6 +8,7 @@ import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
+import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -83,5 +84,10 @@ public class Authentication implements IAuthentication {
     public ResponseEntity<String> validateSecret(@RequestBody String secret) {
         Boolean result = keycloakService.validateSecret(secret.replaceAll("^\"|\"$", ""));
         return ResponseEntity.ok(result.toString());
+    }
+
+    @Override
+    public ResponseEntity<Boolean> resetCredentials(@Valid @RequestBody ResetCredentialModel resetCredentialModel) throws Exception {
+        return ResponseEntity.ok(keycloakService.resetCredentials(resetCredentialModel));
     }
 }

@@ -3,6 +3,7 @@ package com.tdei.auth.service.contract;
 import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
+import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -26,4 +27,6 @@ public interface IKeycloakService {
     String generateSecret();
 
     Boolean validateSecret(String secret);
+
+    Boolean resetCredentials(ResetCredentialModel resetCredentialModel) throws Exception;
 }
