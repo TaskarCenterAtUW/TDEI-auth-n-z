@@ -259,7 +259,7 @@ public class authControllerTest {
     @DisplayName("When resetting credentials with valid request, Expect to return true")
     void shouldResetCredentialsWithValidRequest() throws Exception {
         ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
-        resetCredentialModel.setUserId("testUserId");
+        resetCredentialModel.setUsername("testUserId");
         resetCredentialModel.setPassword("testPassword");
         when(keycloakService.resetCredentials(resetCredentialModel)).thenReturn(true);
         ResponseEntity<Boolean> response = authController.resetCredentials(resetCredentialModel);
@@ -271,7 +271,7 @@ public class authControllerTest {
     @DisplayName("When resetting credentials with non-existing user, Expect to throw ResourceNotFoundException")
     void shouldThrowResourceNotFoundExceptionWhenUserDoesNotExist() throws Exception {
         ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
-        resetCredentialModel.setUserId("nonExistingUserId");
+        resetCredentialModel.setUsername("nonExistingUserId");
         resetCredentialModel.setPassword("testPassword");
         when(keycloakService.resetCredentials(resetCredentialModel)).thenThrow(new ResourceNotFoundException("User not found"));
         assertThrows(ResourceNotFoundException.class, () -> authController.resetCredentials(resetCredentialModel));
@@ -281,7 +281,7 @@ public class authControllerTest {
     @DisplayName("When resetting credentials and an error occurs, Expect to throw Exception")
     void shouldThrowExceptionWhenErrorOccurs() throws Exception {
         ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
-        resetCredentialModel.setUserId("testUserId");
+        resetCredentialModel.setUsername("testUserId");
         resetCredentialModel.setPassword("testPassword");
         when(keycloakService.resetCredentials(resetCredentialModel)).thenThrow(new Exception("Error resetting the password"));
         assertThrows(Exception.class, () -> authController.resetCredentials(resetCredentialModel));

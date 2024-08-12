@@ -204,12 +204,19 @@ public class KeycloakService implements IKeycloakService {
     public Boolean resetCredentials(ResetCredentialModel resetCredentialModel) throws Exception {
         try {
             UsersResource usersResource = getUserInstance();
-            var user = usersResource.get(resetCredentialModel.getUserId());
+            List<UserRepresentation> user = usersResource.search(resetCredentialModel.getUsername(), true);
+
+            if (user == null || user.isEmpty())
+                throw new NotFoundException("User not found");
+
+            var userInfo = user.stream().findFirst().get();
+
+            var userResource = usersResource.get(userInfo.getId());
             CredentialRepresentation cred = new CredentialRepresentation();
             cred.setType(CredentialRepresentation.PASSWORD);
             cred.setValue(resetCredentialModel.getPassword());
             cred.setTemporary(false);
-            user.resetPassword(cred);
+            userResource.resetPassword(cred);
             return true;
         } catch (NotFoundException e) {
             log.error("User not found", e);
@@ -260,7 +267,7 @@ public class KeycloakService implements IKeycloakService {
                     userProfile.setPhone(createdUser.getAttributes().get("phone").stream().findFirst().get());
                 if (createdUser.getAttributes() != null && createdUser.getAttributes().get("x-api-key") != null)
                     userProfile.setApiKey(createdUser.getAttributes().get("x-api-key").stream().findFirst().get());
-                
+
                 return userProfile;
             } else if (createdUserRes.getStatus() == 409) {
                 throw new UserExistsException(userDto.getEmail().trim());
