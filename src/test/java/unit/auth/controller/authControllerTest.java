@@ -1,13 +1,16 @@
 package unit.auth.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tdei.auth.controller.authentication.Authentication;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
 import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
 import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
+import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
 import org.junit.jupiter.api.DisplayName;
@@ -19,13 +22,16 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.security.InvalidKeyException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @Tag("Unit")
@@ -35,6 +41,11 @@ public class authControllerTest {
     private KeycloakService keycloakService;
     @InjectMocks
     private Authentication authController;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("When validating the valid API key, Expect to return HTTP Status 200 with user profile details")
@@ -242,5 +253,37 @@ public class authControllerTest {
         var user = authController.getUserByUserName("user_name");
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("When resetting credentials with valid request, Expect to return true")
+    void shouldResetCredentialsWithValidRequest() throws Exception {
+        ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
+        resetCredentialModel.setUsername("testUserId");
+        resetCredentialModel.setPassword("testPassword");
+        when(keycloakService.resetCredentials(resetCredentialModel)).thenReturn(true);
+        ResponseEntity<Boolean> response = authController.resetCredentials(resetCredentialModel);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody());
+    }
+
+    @Test
+    @DisplayName("When resetting credentials with non-existing user, Expect to throw ResourceNotFoundException")
+    void shouldThrowResourceNotFoundExceptionWhenUserDoesNotExist() throws Exception {
+        ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
+        resetCredentialModel.setUsername("nonExistingUserId");
+        resetCredentialModel.setPassword("testPassword");
+        when(keycloakService.resetCredentials(resetCredentialModel)).thenThrow(new ResourceNotFoundException("User not found"));
+        assertThrows(ResourceNotFoundException.class, () -> authController.resetCredentials(resetCredentialModel));
+    }
+
+    @Test
+    @DisplayName("When resetting credentials and an error occurs, Expect to throw Exception")
+    void shouldThrowExceptionWhenErrorOccurs() throws Exception {
+        ResetCredentialModel resetCredentialModel = new ResetCredentialModel();
+        resetCredentialModel.setUsername("testUserId");
+        resetCredentialModel.setPassword("testPassword");
+        when(keycloakService.resetCredentials(resetCredentialModel)).thenThrow(new Exception("Error resetting the password"));
+        assertThrows(Exception.class, () -> authController.resetCredentials(resetCredentialModel));
     }
 }
