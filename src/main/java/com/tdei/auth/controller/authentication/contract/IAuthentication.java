@@ -10,6 +10,7 @@ import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
+import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -147,5 +148,17 @@ public interface IAuthentication {
             consumes = {"application/json"},
             method = RequestMethod.PUT)
     ResponseEntity<String> validateSecret(@RequestBody String secret);
+
+    @Operation(summary = "Reset user credential", description = "Reset user credential.  Returns the boolean flag if the password is reset successfully.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the boolean flag if the password is reset successfully.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "404", description = "User not found.", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Input validation issue", content = @Content),
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "resetCredentials",
+            produces = {"application/json"},
+            method = RequestMethod.POST)
+    ResponseEntity<Boolean> resetCredentials(@Valid @RequestBody ResetCredentialModel resetCredentialModel) throws Exception;
 }
 

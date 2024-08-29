@@ -7,11 +7,11 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
-@Schema(description = "Describes a login information.")
+@Schema(description = "Describes a reset credential model.")
 @Validated
 @Data
-public class LoginModel {
-    @Schema(required = true, description = "Username.")
+public class ResetCredentialModel {
+    @Schema(required = true, description = "user name.")
     @NotNull
     private String username;
     @Schema(required = true, description = "password", example = "Password@123")
