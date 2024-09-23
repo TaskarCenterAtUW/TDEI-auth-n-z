@@ -3,10 +3,7 @@ package com.tdei.auth.service;
 import com.google.gson.internal.LinkedTreeMap;
 import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
-import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
-import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.*;
 import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
 import com.tdei.auth.model.auth.dto.RegisterUser;
@@ -34,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
@@ -129,7 +125,7 @@ public class KeycloakService implements IKeycloakService {
             if (userInfo.isEnabled() == false)
                 throw new NotFoundException("User not found");
             if (userInfo.isEmailVerified() == false) {
-                throw new ForbiddenException("Email not verified");
+                throw new EmailNotVerifiedException("Email not verified");
             }
             Keycloak keycloak = KeycloakBuilder.builder()
                     .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
@@ -150,9 +146,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
-        } catch (ForbiddenException e) {
+        } catch (EmailNotVerifiedException e) {
             log.error("Email not verified", e);
-            throw new ForbiddenException("Email not verified. Your email address has not been verified. Please verify your email before logging in.");
+            throw new EmailNotVerifiedException("Email not verified. Your email address has not been verified. Please verify your email before logging in.");
         } catch (InvalidCredentialsException e) {
             log.error("Invalid credentials", e);
             throw new InvalidCredentialsException("Invalid Credentials");
