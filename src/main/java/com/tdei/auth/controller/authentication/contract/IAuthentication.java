@@ -34,7 +34,7 @@ import java.util.Optional;
 @Validated
 public interface IAuthentication {
 
-    @Operation(summary = "Triggers the TDEI account update emails", description = "Triggers the TDEI account update emails.  Returns the boolean flag if the email is resent successfully.",
+    @Operation(summary = "Triggers the TDEI account update emails", description = "Triggers the TDEI account update emails via keycloak.  Returns the boolean flag if the email is sent successfully.",
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response - Returns the boolean flag if the email is resent successfully.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
