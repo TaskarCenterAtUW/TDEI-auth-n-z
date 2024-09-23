@@ -14,6 +14,7 @@ import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
+import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
@@ -117,6 +119,18 @@ public class KeycloakService implements IKeycloakService {
     public AccessTokenResponse getUserToken(LoginModel person) {
         AccessTokenResponse token = null;
         try {
+            UsersResource usersResource = getUserInstance();
+            List<UserRepresentation> user = usersResource.search(person.getUsername(), true);
+
+            if (user == null || user.isEmpty())
+                throw new NotFoundException("User not found");
+
+            var userInfo = user.stream().findFirst().get();
+            if (userInfo.isEnabled() == false)
+                throw new NotFoundException("User not found");
+            if (userInfo.isEmailVerified() == false) {
+                throw new ForbiddenException("Email not verified");
+            }
             Keycloak keycloak = KeycloakBuilder.builder()
                     .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
                     .realm(applicationProperties.getKeycloak().getRealm())
@@ -132,8 +146,18 @@ public class KeycloakService implements IKeycloakService {
                     .build();
 
             token = keycloak.tokenManager().getAccessToken();
-        } catch (Exception ex) {
-            log.error("Error authenticating the user", ex);
+
+        } catch (NotFoundException e) {
+            log.error("User not found", e);
+            throw new ResourceNotFoundException("User not found");
+        } catch (ForbiddenException e) {
+            log.error("Email not verified", e);
+            throw new ForbiddenException("Email not verified. Your email address has not been verified. Please verify your email before logging in.");
+        } catch (InvalidCredentialsException e) {
+            log.error("Invalid credentials", e);
+            throw new InvalidCredentialsException("Invalid Credentials");
+        } catch (Exception e) {
+            log.error("Error authenticating the user", e);
             throw new InvalidCredentialsException("Invalid Credentials");
         }
         return token;
@@ -238,8 +262,9 @@ public class KeycloakService implements IKeycloakService {
                 user.setLastName(userDto.getLastName().trim());
             user.setUsername(userDto.getEmail().trim());
             user.setEmail(userDto.getEmail().trim());
-            user.setEmailVerified(true);
+            user.setEmailVerified(false);
             user.setEnabled(true);
+            user.setRequiredActions(List.of("VERIFY_EMAIL"));
 
             //Set user attributes
             Map<String, List<String>> attributes = new HashMap<>();
@@ -259,7 +284,10 @@ public class KeycloakService implements IKeycloakService {
             var createdUserRes = usersResource.create(user);
             if (createdUserRes.getStatus() == 201) {
                 String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
-                var createdUser = usersResource.get(userId).toRepresentation();
+                var newUserResource = usersResource.get(userId);
+                newUserResource.executeActionsEmail(List.of("VERIFY_EMAIL"));
+
+                var createdUser = newUserResource.toRepresentation();
 
                 var userProfile = UserProfileMapper.INSTANCE.fromUserRepresentation(createdUser);
 
@@ -302,4 +330,31 @@ public class KeycloakService implements IKeycloakService {
             throw new Exception("Error fetching the user information");
         }
     }
+
+    public Boolean triggerEmail(TriggerEmailModel triggerEmailModel) throws Exception {
+        try {
+            UsersResource usersResource = getUserInstance();
+            List<UserRepresentation> user = usersResource.search(triggerEmailModel.getUsername(), true);
+
+            if (user == null || user.isEmpty())
+                throw new NotFoundException("User not found");
+
+            var userInfo = user.stream().findFirst().get();
+            var userResource = usersResource.get(userInfo.getId());
+            List<String> emailActions = new ArrayList<>();
+            triggerEmailModel.getEmail_actions().forEach(x -> emailActions.add(x.toString()));
+
+            var er = keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
+            var te = er.get(userInfo.getId());
+            te.executeActionsEmail(applicationProperties.getKeycloak().getResource(), applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), emailActions);
+        } catch (NotFoundException e) {
+            log.error("User not found", e);
+            throw new ResourceNotFoundException("User not found");
+        } catch (Exception e) {
+            log.error("Error triggering the email", e);
+            throw new Exception("Error triggering the email");
+        }
+        return true;
+    }
+
 }

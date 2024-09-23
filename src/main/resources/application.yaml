@@ -27,6 +27,7 @@ swagger:
   version: v0.1
 Keycloak-client-endpoints:
   base-url: "${KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL}"
+  redirect-url: "${KEYCLOAK_CLIENT_ENDPOINTS_REDIRECT_URL}"
 keycloak:
   auth-server-url: "${KEYCLOAK_AUTH_SERVER_URL}"
   realm: tdei
