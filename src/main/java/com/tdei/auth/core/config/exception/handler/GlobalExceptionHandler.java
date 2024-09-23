@@ -1,9 +1,6 @@
 package com.tdei.auth.core.config.exception.handler;
 
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
-import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
-import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
+import com.tdei.auth.core.config.exception.handler.exceptions.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -171,6 +168,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         details.add(ex.getMessage());
 
         ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.CONFLICT, "User already exists", details);
+
+        return ResponseEntityBuilder.build(err);
+
+    }
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    protected ResponseEntity<Object> emailNotVerifiedException(EmailNotVerifiedException ex, WebRequest request) {
+
+        List<String> details = new ArrayList<>();
+        details.add(ex.getMessage());
+
+        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.FORBIDDEN, "", details);
 
         return ResponseEntityBuilder.build(err);
 
