@@ -9,6 +9,7 @@ import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
+import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,6 +60,11 @@ public class Authentication implements IAuthentication {
     @Override
     public ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception {
         return ResponseEntity.ok(keycloakService.registerUser(user));
+    }
+
+    @Override
+    public ResponseEntity<Boolean> triggerEmail(TriggerEmailModel triggerEmailModel) throws Exception {
+        return ResponseEntity.ok(keycloakService.triggerEmail(triggerEmailModel));
     }
 
     @Override

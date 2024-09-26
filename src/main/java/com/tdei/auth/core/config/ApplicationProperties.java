@@ -66,6 +66,7 @@ public class ApplicationProperties {
     @NoArgsConstructor
     public static class KeycloakEndpointUrls {
         private String baseUrl;
+        private String redirectUrl;
     }
 }
 

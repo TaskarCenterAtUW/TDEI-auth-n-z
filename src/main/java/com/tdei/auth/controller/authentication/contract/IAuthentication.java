@@ -11,6 +11,7 @@ import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
+import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -32,6 +33,18 @@ import java.util.Optional;
 
 @Validated
 public interface IAuthentication {
+
+    @Operation(summary = "Triggers the TDEI account update emails", description = "Triggers the TDEI account update emails via keycloak.  Returns the boolean flag if the email is sent successfully.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the boolean flag if the email is resent successfully.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "404", description = "User not found.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "triggerEmail",
+            produces = {"application/json"},
+            method = RequestMethod.POST)
+    ResponseEntity<Boolean> triggerEmail(@Valid @RequestBody TriggerEmailModel triggerEmailModel) throws Exception;
+
 
     @Operation(summary = "Get user profile by username", description = "Get user profile by username.  Returns the user profile. ",
             tags = {"Authentication"})
@@ -94,8 +107,9 @@ public interface IAuthentication {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response - Returns the access token for the validated user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
 
-            @ApiResponse(responseCode = "401", description = "This request is unauthorized.", content = @Content),
-
+            @ApiResponse(responseCode = "401", description = "This request is unauthenticated.", content = @Content),
+            @ApiResponse(responseCode = "403", description = "User request if forbidden due to unauthorized or email not verified.", content = @Content),
+            @ApiResponse(responseCode = "404", description = "User not found.", content = @Content),
             @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
     @RequestMapping(value = "authenticate",
             produces = {"application/json"},
