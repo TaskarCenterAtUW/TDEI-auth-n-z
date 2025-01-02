@@ -3,6 +3,7 @@ package com.tdei.auth.model.common.dto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
@@ -14,6 +15,7 @@ import java.util.List;
 public class TriggerEmailModel {
     @Schema(required = true, description = "Username.")
     @NotNull
+    @Length(min = 1, max = 255)
     String username;
     @Schema(required = true, description = "Email actions.")
     @NotNull
