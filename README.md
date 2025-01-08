@@ -6,6 +6,7 @@ the
 user, like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the
 users.
 
+
 ## System flow diagram
 
 Below diagram depicts the system flow for Authentication service
