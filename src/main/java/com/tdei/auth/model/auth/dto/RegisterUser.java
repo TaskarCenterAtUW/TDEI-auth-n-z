@@ -4,24 +4,28 @@ import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 
 @Data
 @Validated
 public class RegisterUser {
-    @Length(min = 1, max = 255)
+    @NotBlank(message = "First name is required and cannot be empty.")
+    @Length(min = 1, max = 255, message = "First name must be between 1 and 255 characters long.")
     private String firstName;
-    @Length(min = 1, max = 255)
+    @Pattern(
+            regexp = "^$|.{1,255}",
+            message = "lastName must be between 1 and 255 characters long."
+    )
     private String lastName;
     @NotNull
     @NotEmpty
     @Email()
     @Length(min = 1, max = 255)
     private String email;
-    @Length(min = 8, max = 15)
+    @Pattern(
+            regexp = "^$|\\d{8,15}",
+            message = "Phone number must contain 8-15 digits."
+    )
     private String phone;
     @NotNull
     @NotEmpty
