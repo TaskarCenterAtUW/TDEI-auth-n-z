@@ -281,7 +281,7 @@ public class KeycloakService implements IKeycloakService {
             if (createdUserRes.getStatus() == 201) {
                 String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 var newUserResource = usersResource.get(userId);
-                newUserResource.executeActionsEmail(List.of("VERIFY_EMAIL"));
+                newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(), applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
 
                 var createdUser = newUserResource.toRepresentation();
 
