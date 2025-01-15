@@ -407,4 +407,49 @@ public class authControllerTest {
         System.out.println(violations);
         assertFalse(violations.isEmpty());
     }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with empty string for optional fields, Expect to pass test")
+    public void testRegisterUserModelEmptyOptinalfields() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("Tdei");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with empty firstname, Expect to return error")
+    public void testRegisterUserModelRequiredFirstName() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with firstname chars > 255, Expect to return error")
+    public void testRegisterUserModelRequiredFirstNameGt255() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertFalse(violations.isEmpty());
+    }
 }
