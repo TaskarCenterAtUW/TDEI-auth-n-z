@@ -348,6 +348,9 @@ public class KeycloakServiceTest {
     @DisplayName("When registering new user , Expect to return userprofile on success")
     void registerUserTest() throws Exception {
         //Arrange
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        when(keycloakProperties.getResource()).thenReturn("test");
+        when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
         var registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("FName");
