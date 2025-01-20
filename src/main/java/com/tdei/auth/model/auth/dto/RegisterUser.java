@@ -22,10 +22,6 @@ public class RegisterUser {
     @Email()
     @Length(min = 1, max = 255)
     private String email;
-    @Pattern(
-            regexp = "^$|\\d{8,15}",
-            message = "Phone number must contain 8-15 digits."
-    )
     private String phone;
     @NotNull
     @NotEmpty
