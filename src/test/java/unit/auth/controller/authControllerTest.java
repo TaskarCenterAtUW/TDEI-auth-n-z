@@ -13,6 +13,7 @@ import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.service.KeycloakService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -27,8 +28,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.security.InvalidKeyException;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,6 +52,14 @@ public class authControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    private Validator validator;
+
+    @BeforeEach
+    public void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
 
     @Test
     @DisplayName("When validating the valid API key, Expect to return HTTP Status 200 with user profile details")
@@ -103,6 +117,28 @@ public class authControllerTest {
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(TokenResponse.class);
+    }
+
+    @Test
+    @DisplayName("When validating the LoginModel with password policy not satisfied, Expect to return error")
+    public void testInvalidLoginModel() {
+        LoginModel loginModel = new LoginModel();
+        loginModel.setUsername("user@tdei.com"); // Invalid username
+        loginModel.setPassword("test"); // Invalid password
+
+        Set<ConstraintViolation<LoginModel>> violations = validator.validate(loginModel);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the LoginModel with password > 255, Expect to return error")
+    public void testLongPasswordLoginModel() {
+        LoginModel loginModel = new LoginModel();
+        loginModel.setUsername("user@tdei.com"); // Invalid username
+        loginModel.setPassword("ABCD*EFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567HIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678CDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"); // Invalid password
+
+        Set<ConstraintViolation<LoginModel>> violations = validator.validate(loginModel);
+        assertFalse(violations.isEmpty());
     }
 
     @Test
@@ -285,5 +321,135 @@ public class authControllerTest {
         resetCredentialModel.setPassword("testPassword");
         when(keycloakService.resetCredentials(resetCredentialModel)).thenThrow(new Exception("Error resetting the password"));
         assertThrows(Exception.class, () -> authController.resetCredentials(resetCredentialModel));
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy not satisfied Password without number, Expect to return error")
+    public void testRegisterUserModelWithoutNumber() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("AdminTest*"); // Invalid password
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy not satisfied Password without special char, Expect to return error")
+    public void testRegisterUserModelWithoutSpatialchar() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("AdminTest*"); // Invalid password
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy not satisfied Password without upper case char, Expect to return error")
+    public void testRegisterUserModelWithoutUppercaseChars() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("admintest01*"); // Invalid password
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy not satisfied Password less than 8 char, Expect to return error")
+    public void testRegisterUserModelPassLessThanMinChar() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("Admin1*"); // Invalid password
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy satisfied, Expect to return success")
+    public void testRegisterUserModelValidPassword() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with password policy not satisfied Password max 255 char, Expect to return error")
+    public void testRegisterUserModelPassMaxChar() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("test");
+        registerUser.setLastName("test");
+        registerUser.setPhone("9999999999");
+        registerUser.setPassword("A1!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefgsa"); // Invalid password
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with empty string for optional fields, Expect to pass test")
+    public void testRegisterUserModelEmptyOptinalfields() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("Tdei");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with empty firstname, Expect to return error")
+    public void testRegisterUserModelRequiredFirstName() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("When validating the RegisterUser with firstname chars > 255, Expect to return error")
+    public void testRegisterUserModelRequiredFirstNameGt255() {
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        registerUser.setLastName("");
+        registerUser.setPhone("");
+        registerUser.setPassword("Admin01*");
+
+        Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
+        System.out.println(violations);
+        assertFalse(violations.isEmpty());
     }
 }

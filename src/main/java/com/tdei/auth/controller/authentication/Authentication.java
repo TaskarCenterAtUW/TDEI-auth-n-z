@@ -46,7 +46,7 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<TokenResponse> authenticate(@RequestBody LoginModel loginModel) {
+    public ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel) {
         AccessTokenResponse accessTokenResponse = keycloakService.getUserToken(loginModel);
         TokenResponse token = TokenMapper.INSTANCE.fromAccessTokenResponse(accessTokenResponse);
         return ResponseEntity.ok(token);
