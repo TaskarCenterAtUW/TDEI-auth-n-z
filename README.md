@@ -60,7 +60,7 @@ $ git clone https://github.com/TaskarCenterAtUW/TDEI-auth-n-z.git
 
 Application secrets are not included in the code repository. Below are the instruction for each environment
 
-###### DEV
+###### Local
 
 Create **developer-local-properties.yaml** file under root of `resource` folder and override the application.yaml
 placeholders.
@@ -83,6 +83,8 @@ Secrets are configured as environment variables on the deployment server.
 | SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds |
 | KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                    |
 | KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url             |
+
+    KEYCLOAK_CREDENTIALS_SECRET
 
 ## Building the project
 
