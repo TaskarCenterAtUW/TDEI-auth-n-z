@@ -38,7 +38,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @Tag("Unit")
 @ExtendWith(MockitoExtension.class)
@@ -451,5 +452,24 @@ public class authControllerTest {
         Set<ConstraintViolation<RegisterUser>> violations = validator.validate(registerUser);
         System.out.println(violations);
         assertFalse(violations.isEmpty());
+    }
+
+
+    @Test
+    @DisplayName("When regenerating API key for valid user, Expect to return new API key")
+    void regenerateAPIKeyValidUser() throws Exception {
+        doReturn("new_api_key").when(keycloakService).regenerateAPIKey(anyString());
+
+        var response = authController.regenerateAPIKey("test_username");
+
+        assertThat(response.getBody()).isEqualTo("new_api_key");
+    }
+
+    @Test
+    @DisplayName("When regenerating API key for non-existing user, Expect to throw ResourceNotFoundException")
+    void regenerateAPIKeyNonExistingUser() throws Exception {
+        doThrow(new ResourceNotFoundException("User not found")).when(keycloakService).regenerateAPIKey(anyString());
+
+        assertThrows(ResourceNotFoundException.class, () -> authController.regenerateAPIKey("test"));
     }
 }

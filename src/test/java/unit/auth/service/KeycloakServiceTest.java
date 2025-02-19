@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.tdei.auth.core.config.ApplicationProperties;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
 import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
 import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.UserRoles;
@@ -532,6 +533,34 @@ public class KeycloakServiceTest {
         var result = keycloakService.validateSecret("invalid_secretToken");
         //Assert
         assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("When updating user information, Expect to update successfully")
+    void updateUserInformation() throws Exception {
+        when(usersResourceSpy.get(anyString())).thenReturn(mock(UserResource.class));
+        UsersResource usersResourceSpy = mockUserInstance();
+        var userResponse = new UserRepresentation();
+        userResponse.setEmail("test@email.com");
+        userResponse.setId("test_user_id");
+        var attributes = new HashMap();
+        attributes.put("phone", Arrays.asList("9999999999"));
+        attributes.put("x-api-key", Arrays.asList("old-api-key"));
+        userResponse.setAttributes(attributes);
+        doReturn(Arrays.asList(userResponse)).when(usersResourceSpy).search(anyString(), anyBoolean());
+
+        var new_api_key = keycloakService.regenerateAPIKey("test_username");
+        assertThat(userResponse.getAttributes().get("x-api-key").get(0)).isEqualTo(new_api_key);
+    }
+
+    @Test
+    @DisplayName("When regenerating API key for invalid user, Expect to throw ResourceNotFoundException")
+    void regenerateAPIKeyInvalidUser() {
+        //Arrange
+        UsersResource usersResourceSpy = mockUserInstance();
+        when(usersResourceSpy.search(anyString(), anyBoolean())).thenReturn(Arrays.asList());
+        //Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> keycloakService.regenerateAPIKey("invalid_username"));
     }
 
 }

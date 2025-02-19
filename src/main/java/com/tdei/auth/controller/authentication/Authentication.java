@@ -19,6 +19,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
@@ -95,5 +96,10 @@ public class Authentication implements IAuthentication {
     @Override
     public ResponseEntity<Boolean> resetCredentials(@Valid @RequestBody ResetCredentialModel resetCredentialModel) throws Exception {
         return ResponseEntity.ok(keycloakService.resetCredentials(resetCredentialModel));
+    }
+
+    @Override
+    public ResponseEntity<String> regenerateAPIKey(@RequestParam(name = "username") String username) throws Exception {
+        return ResponseEntity.ok(keycloakService.regenerateAPIKey(username));
     }
 }
