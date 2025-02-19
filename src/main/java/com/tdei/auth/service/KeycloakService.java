@@ -353,4 +353,35 @@ public class KeycloakService implements IKeycloakService {
         return true;
     }
 
+    /**
+     * Regenerate the API key for the user
+     *
+     * @param username
+     * @return
+     * @throws Exception
+     */
+    public String regenerateAPIKey(String username) throws Exception {
+        try {
+            log.info("Regenerating the API key for the user: {}", username);
+            UsersResource usersResource = getUserInstance();
+            List<UserRepresentation> user = usersResource.search(username, true);
+
+            if (user == null || user.isEmpty())
+                throw new NotFoundException("User not found");
+
+            var userInfo = user.stream().findFirst().get();
+            var newApiKey = UUID.randomUUID().toString();
+            userInfo.getAttributes().put("x-api-key", List.of(newApiKey));
+
+            var userToUpdate = usersResource.get(userInfo.getId());
+            userToUpdate.update(userInfo);
+            return newApiKey;
+        } catch (NotFoundException e) {
+            log.error("User not found", e);
+            throw new ResourceNotFoundException("User not found");
+        } catch (Exception e) {
+            log.error("Error regenerating the API key", e);
+            throw new Exception("Error regenerating the API key");
+        }
+    }
 }
