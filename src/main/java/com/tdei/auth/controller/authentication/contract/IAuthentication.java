@@ -174,5 +174,18 @@ public interface IAuthentication {
             produces = {"application/json"},
             method = RequestMethod.POST)
     ResponseEntity<Boolean> resetCredentials(@Valid @RequestBody ResetCredentialModel resetCredentialModel) throws Exception;
+
+
+    @Operation(summary = "Regenerate API Key", description = "Regenerate API Key.  Returns the new API Key.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns the new API Key.", content = @Content(mediaType = "text/plain", schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "404", description = "User not found.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "An server error occurred.", content = @Content)})
+    @RequestMapping(value = "regenerateAPIKey",
+            produces = {"text/plain"},
+            consumes = {"*"},
+            method = RequestMethod.POST)
+    ResponseEntity<String> regenerateAPIKey(@RequestParam(name = "username") String username) throws Exception;
 }
 
