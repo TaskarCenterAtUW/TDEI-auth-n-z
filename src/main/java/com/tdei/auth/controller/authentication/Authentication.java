@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import java.security.InvalidKeyException;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,7 +48,7 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel) {
+    public ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel) throws TimeoutException {
         AccessTokenResponse accessTokenResponse = keycloakService.getUserToken(loginModel);
         TokenResponse token = TokenMapper.INSTANCE.fromAccessTokenResponse(accessTokenResponse);
         return ResponseEntity.ok(token);
