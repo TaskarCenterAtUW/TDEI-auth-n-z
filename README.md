@@ -73,18 +73,21 @@ Secrets are configured as environment variables on the deployment server.
 
 ###### Environment variable
 
-| Name                                | Description                          |
-|-------------------------------------|--------------------------------------|
-| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak secret from portal          |
-| SPRING_DATASOURCE_URL               | Database JDBC URL                    |
-| SPRING_DATASOURCE_USERNAME          | Database user name                   |
-| SPRING_DATASOURCE_PASSWORD          | Database password                    |
-| SPRING_APPLICATION_SECRET           | Secret key for token generation      |
-| SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds |
-| KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                    |
-| KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url             |
-
-    KEYCLOAK_CREDENTIALS_SECRET
+| Name                                | Description                                               |
+|-------------------------------------|-----------------------------------------------------------|
+| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak secret from portal                               |
+| SPRING_DATASOURCE_URL               | Database JDBC URL                                         |
+| SPRING_DATASOURCE_USERNAME          | Database user name                                        |
+| SPRING_DATASOURCE_PASSWORD          | Database password                                         |
+| SPRING_APPLICATION_SECRET           | Secret key for token generation                           |
+| SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds                      |
+| KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                                         |
+| KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url                                  |
+| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak client secret                                    |
+| KEYCLOAK_CONNECTION_POOL_SIZE       | Keycloak connection pool size (default : 100)             |
+| KEYCLOAK_CONNECTION_TIMEOUT         | Keycloak connection timeout in seconds (default : 15sec)  |
+| SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE | TDEI database connection pool size (default : 100)        |
+| SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT | TDEI database connection timeout in miliseconds  (default : 15sec) |
 
 ## Building the project
 

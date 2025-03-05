@@ -12,8 +12,8 @@ spring:
     url: "${SPRING_DATASOURCE_URL}"
     password: "${SPRING_DATASOURCE_PASSWORD}"
     hikari:
-      maximum-pool-size: "${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE}"
-      connection-timeout: "${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT}"
+      maximum-pool-size: "${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:100}"
+      connection-timeout: "${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:15000}"
 spring-doc:
   swagger-ui:
     operationsSorter: alpha
@@ -32,8 +32,8 @@ Keycloak-client-endpoints:
   base-url: "${KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL}"
   redirect-url: "${KEYCLOAK_CLIENT_ENDPOINTS_REDIRECT_URL}"
 keycloak:
-  connection-pool-size: "${KEYCLOAK_CONNECTION_POOL_SIZE}"
-  connection-timeout: "${KEYCLOAK_CONNECTION_TIMEOUT}"
+  connection-pool-size: "${KEYCLOAK_CONNECTION_POOL_SIZE:100}"
+  connection-timeout: "${KEYCLOAK_CONNECTION_TIMEOUT:15}"
   auth-server-url: "${KEYCLOAK_AUTH_SERVER_URL}"
   realm: tdei
   enabled: true
