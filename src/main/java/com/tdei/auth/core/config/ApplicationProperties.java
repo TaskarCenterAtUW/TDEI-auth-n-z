@@ -50,7 +50,8 @@ public class ApplicationProperties {
     @NoArgsConstructor
     public static class keycloakProperties {
         private String authServerUrl;
-        //private String userUrl;
+        private int connectionPoolSize;
+        private int connectionTimeout;
         private String realm;
         private String resource;
         private KeycloakCreds credentials;

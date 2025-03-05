@@ -30,6 +30,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Size;
 import java.security.InvalidKeyException;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 @Validated
 public interface IAuthentication {
@@ -114,7 +115,7 @@ public interface IAuthentication {
     @RequestMapping(value = "authenticate",
             produces = {"application/json"},
             method = RequestMethod.POST)
-    ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel);
+    ResponseEntity<TokenResponse> authenticate(@Valid @RequestBody LoginModel loginModel) throws TimeoutException;
 
 
     @Operation(summary = "Check user access", description = "Returns boolean flag if user satisfies the roles.",

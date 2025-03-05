@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.TimeUnit;
+
 @Configuration
 public class BeanConfig {
 
@@ -23,7 +25,8 @@ public class BeanConfig {
                 .clientId(applicationProperties.getKeycloak().getResource())
                 .clientSecret(applicationProperties.getKeycloak().getCredentials().getSecret())
                 .resteasyClient(new ResteasyClientBuilder()
-                        .connectionPoolSize(10)
+                        .connectionPoolSize(applicationProperties.getKeycloak().getConnectionPoolSize())
+                        .connectTimeout(applicationProperties.getKeycloak().getConnectionTimeout(), TimeUnit.SECONDS)
                         .build()
                 )
                 .build();
