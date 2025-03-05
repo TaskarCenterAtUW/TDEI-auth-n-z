@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
 import javax.xml.bind.DatatypeConverter;
@@ -49,8 +48,6 @@ public class KeycloakService implements IKeycloakService {
     private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
-    @Autowired
-    private DataSource dataSource;
     @Autowired
     private UserManagementRepository userManagementRepository;
 
@@ -121,7 +118,6 @@ public class KeycloakService implements IKeycloakService {
     }
 
     public AccessTokenResponse getUserToken(LoginModel person) throws TimeoutException {
-        System.out.println("Using DataSource: " + dataSource.getClass().getName());
 
         AccessTokenResponse token = null;
         try {
