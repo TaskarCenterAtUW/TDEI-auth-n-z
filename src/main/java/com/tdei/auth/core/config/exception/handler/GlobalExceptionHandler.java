@@ -185,6 +185,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(GatewayTimeoutException.class)
+    protected ResponseEntity<Object> gatewayTimeoutException(GatewayTimeoutException ex, WebRequest request) {
+
+        List<String> details = new ArrayList<>();
+        details.add(ex.getMessage());
+
+        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.GATEWAY_TIMEOUT, "", details);
+
+        return ResponseEntityBuilder.build(err);
+
+    }
+
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleAll(Exception ex, WebRequest request) {
 

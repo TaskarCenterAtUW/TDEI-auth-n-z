@@ -32,11 +32,14 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ProcessingException;
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @RequiredArgsConstructor
 @Service
@@ -45,7 +48,6 @@ public class KeycloakService implements IKeycloakService {
     private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
-
     @Autowired
     private UserManagementRepository userManagementRepository;
 
@@ -75,6 +77,9 @@ public class KeycloakService implements IKeycloakService {
                     applicationProperties.getKeycloak().getCredentials().getSecret(),
                     accessToken);
             return Optional.of(user);
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error getting user by access token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
@@ -112,7 +117,8 @@ public class KeycloakService implements IKeycloakService {
         return satisfied;
     }
 
-    public AccessTokenResponse getUserToken(LoginModel person) {
+    public AccessTokenResponse getUserToken(LoginModel person) throws TimeoutException {
+
         AccessTokenResponse token = null;
         try {
             UsersResource usersResource = getUserInstance();
@@ -136,7 +142,8 @@ public class KeycloakService implements IKeycloakService {
                     .username(person.getUsername())
                     .password(person.getPassword())
                     .resteasyClient(new ResteasyClientBuilder()
-                            .connectionPoolSize(1)
+                            .connectionPoolSize(applicationProperties.getKeycloak().getConnectionPoolSize())
+                            .connectTimeout(applicationProperties.getKeycloak().getConnectionTimeout(), TimeUnit.SECONDS)
                             .build()
                     )
                     .build();
@@ -152,6 +159,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (InvalidCredentialsException e) {
             log.error("Invalid credentials", e);
             throw new InvalidCredentialsException("Invalid Credentials");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error authenticating the user", e);
             throw new InvalidCredentialsException("Invalid Credentials");
@@ -173,6 +183,9 @@ public class KeycloakService implements IKeycloakService {
             res.setExpiresIn(Math.round((Double) user.get("expires_in")));
             res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
             return res;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error refreshing the token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
@@ -213,6 +226,9 @@ public class KeycloakService implements IKeycloakService {
             return false;
         } catch (IllegalArgumentException e) {
             return false;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         }
         return true;
     }
@@ -241,6 +257,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error resetting the password", e);
             throw new Exception("Error resetting the password");
@@ -296,6 +315,9 @@ public class KeycloakService implements IKeycloakService {
             } else if (createdUserRes.getStatus() == 409) {
                 throw new UserExistsException(userDto.getEmail().trim());
             }
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Failed registering the user", e);
             if (e instanceof UserExistsException)
@@ -321,6 +343,9 @@ public class KeycloakService implements IKeycloakService {
             if (userInfo.getAttributes() != null && userInfo.getAttributes().get("x-api-key") != null)
                 userProfile.setApiKey(userInfo.getAttributes().get("x-api-key").stream().findFirst().get());
             return userProfile;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error fetching the user information", e);
             throw new Exception("Error fetching the user information");
@@ -346,6 +371,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error triggering the email", e);
             throw new Exception("Error triggering the email");
@@ -379,6 +407,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error regenerating the API key", e);
             throw new Exception("Error regenerating the API key");
