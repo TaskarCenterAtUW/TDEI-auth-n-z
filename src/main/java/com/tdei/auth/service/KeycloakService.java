@@ -48,6 +48,7 @@ public class KeycloakService implements IKeycloakService {
     private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
+    private final JwtValidationService jwtValidationService;
     @Autowired
     private UserManagementRepository userManagementRepository;
 
@@ -69,7 +70,25 @@ public class KeycloakService implements IKeycloakService {
 
     public Optional<KUserInfo> getUserByAccessToken(String accessToken) {
         try {
-            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
+            Claims claims = jwtValidationService.validateJwtToken(accessToken);
+
+            if (claims.getExpiration().before(new java.util.Date())) {
+                throw new InvalidAccessTokenException("Invalid/Expired Access Token");
+            }
+
+            String client = claims.get("azp", String.class);
+
+            // Check if client is application client and verify with allowed app clients
+            if (applicationProperties.getSpring().getApplication().getAllowedAppClients().contains(client)) {
+                KUserInfo user = new KUserInfo();
+                user.setPreferred_username(client);
+                user.setSub(claims.getSubject());
+                return Optional.of(user);
+            }
+
+            // TDEI Client
+            KeyclockUserClient keyclockUserClient = KeyclockUserClient
+                    .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
             ClientCreds creds = new ClientCreds();
             creds.setClient_id(applicationProperties.getKeycloak().getResource());
             creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
@@ -81,7 +100,7 @@ public class KeycloakService implements IKeycloakService {
             log.error("Connection timeout", ex);
             throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
-            log.error("Error getting user by access token", e);
+            log.error("Error validating JWT token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
