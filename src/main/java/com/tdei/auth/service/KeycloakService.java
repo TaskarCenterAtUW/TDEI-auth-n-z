@@ -15,6 +15,7 @@ import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
+import com.tdei.auth.service.JwtValidationService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
@@ -110,7 +111,7 @@ public class KeycloakService implements IKeycloakService {
 
     @Override
     public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles,
-                                 Optional<Boolean> affirmative) {
+            Optional<Boolean> affirmative) {
         Boolean satisfied = false;
 
         var userRoles = userManagementRepository.getUserRoles(userId);
