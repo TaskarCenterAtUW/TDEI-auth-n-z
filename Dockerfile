@@ -1,5 +1,5 @@
 # Use an official OpenJDK runtime as the base image
-FROM openjdk:17-jdk-slim-buster as builder
+FROM openjdk:17-jdk-slim-bookworm as builder
 
 # Set the working directory inside the Docker image
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY . .
 # Build the application using Maven
 RUN mvn clean package -DskipTests
 
-FROM openjdk:17-jdk-slim-buster
+FROM openjdk:17-jdk-slim-bookworm
 #Create empty jar file
 RUN touch application.jar
 #Copy generated jar and overwrite application.jar
