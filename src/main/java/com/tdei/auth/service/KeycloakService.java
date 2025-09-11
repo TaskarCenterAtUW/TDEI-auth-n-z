@@ -15,7 +15,6 @@ import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.contract.IKeycloakService;
-import com.tdei.auth.service.JwtValidationService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
