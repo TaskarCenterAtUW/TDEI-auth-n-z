@@ -1,17 +1,14 @@
 # Use an official OpenJDK runtime as the base image
-FROM openjdk:17-jdk-slim-bookworm as builder
+FROM openjdk:17-jdk-slim-bullseye as builder
 
 # Set the working directory inside the Docker image
 WORKDIR /app
 
-# Install Maven 3.8
+# Install Maven using apt package manager with specific version
 RUN apt-get update && \
-    apt-get install -y wget && \
-    wget https://apache.osuosl.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz && \
-    tar -xzf apache-maven-3.8.8-bin.tar.gz -C /opt && \
-    ln -s /opt/apache-maven-3.8.8 /opt/maven && \
-    ln -s /opt/maven/bin/mvn /usr/local/bin/mvn && \
-    rm -f apache-maven-3.8.8-bin.tar.gz
+    apt-get install -y maven=3.6.3-5 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the application source code and pom.xml
 COPY . .
@@ -19,7 +16,7 @@ COPY . .
 # Build the application using Maven
 RUN mvn clean package -DskipTests
 
-FROM openjdk:17-jdk-slim-bookworm
+FROM openjdk:17-jdk-slim-bullseye
 #Create empty jar file
 RUN touch application.jar
 #Copy generated jar and overwrite application.jar
