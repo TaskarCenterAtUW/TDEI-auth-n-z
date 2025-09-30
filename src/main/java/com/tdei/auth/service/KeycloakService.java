@@ -304,7 +304,7 @@ public class KeycloakService implements IKeycloakService {
         }
     }
 
-    public UserProfile registerUser(RegisterUser userDto, Optional<String> referral_code) throws Exception {
+    public UserProfile registerUser(RegisterUser userDto) throws Exception {
         try {
             UsersResource usersResource = getUserInstance();
 
@@ -317,7 +317,7 @@ public class KeycloakService implements IKeycloakService {
             user.setEmail(userDto.getEmail().trim());
             user.setEmailVerified(false);
             // Set referral code if present and enable email verified
-            if (referral_code.isPresent() && !referral_code.get().isEmpty()) {
+            if (userDto.getCode() != null && userDto.getCode().isPresent() && !userDto.getCode().get().isEmpty()) {
                 user.setEmailVerified(true);
             } else {
                 user.setRequiredActions(List.of("VERIFY_EMAIL"));
@@ -330,8 +330,8 @@ public class KeycloakService implements IKeycloakService {
             if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
                 attributes.put("phone", List.of(userDto.getPhone()));
             }
-            if (referral_code.isPresent() && !referral_code.get().isEmpty()) {
-                user.setAttributes(Map.of("referral_code", List.of(referral_code.get())));
+            if (userDto.getCode() != null && userDto.getCode().isPresent() && !userDto.getCode().get().isEmpty()) {
+                user.setAttributes(Map.of("referral_code", List.of(userDto.getCode().get())));
             }
             user.setAttributes(attributes);
 
@@ -347,7 +347,7 @@ public class KeycloakService implements IKeycloakService {
                 String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 var newUserResource = usersResource.get(userId);
 
-                if (!referral_code.isPresent()) {
+                if (userDto.getCode() != null && !userDto.getCode().isPresent()) {
                     newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
                             applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
                 }

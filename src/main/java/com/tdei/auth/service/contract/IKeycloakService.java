@@ -18,7 +18,7 @@ public interface IKeycloakService {
 
     Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative);
 
-    UserProfile registerUser(RegisterUser userDto, Optional<String> referral_code) throws Exception;
+    UserProfile registerUser(RegisterUser userDto) throws Exception;
 
     UserProfile getUserByUserName(String userName) throws Exception;
 

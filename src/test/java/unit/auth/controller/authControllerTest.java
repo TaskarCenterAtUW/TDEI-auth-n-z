@@ -242,10 +242,10 @@ public class authControllerTest {
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
 
-        when(keycloakService.registerUser(registerUser, Optional.empty())).thenReturn(new UserProfile());
+        when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
 
         //Act
-        var user = authController.registerUser(registerUser, Optional.empty());
+        var user = authController.registerUser(registerUser);
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
@@ -261,11 +261,12 @@ public class authControllerTest {
         registerUser.setLastName("lastname");
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
+        registerUser.setCode(Optional.of("PROMO2024"));
 
-        when(keycloakService.registerUser(registerUser, Optional.of("PROMO"))).thenReturn(new UserProfile());
+        when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
 
         //Act
-        var user = authController.registerUser(registerUser, Optional.of("PROMO"));
+        var user = authController.registerUser(registerUser);
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
@@ -282,10 +283,10 @@ public class authControllerTest {
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
 
-        when(keycloakService.registerUser(registerUser, Optional.empty())).thenThrow(new UserExistsException("test@email.com"));
+        when(keycloakService.registerUser(registerUser)).thenThrow(new UserExistsException("test@email.com"));
 
         //Act & Arrange
-        assertThrows(UserExistsException.class, () -> authController.registerUser(registerUser, Optional.empty()));
+        assertThrows(UserExistsException.class, () -> authController.registerUser(registerUser));
     }
 
     @Test

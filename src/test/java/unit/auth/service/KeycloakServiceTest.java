@@ -413,9 +413,9 @@ public class KeycloakServiceTest {
     void registerUserTest() throws Exception {
         // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
-        when(keycloakProperties.getResource()).thenReturn("test");
-        when(applicationProperties.getKeycloakClientEndpoints())
-                .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
+//        when(keycloakProperties.getResource()).thenReturn("test");
+//        when(applicationProperties.getKeycloakClientEndpoints())
+//                .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
         var registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("FName");
@@ -444,7 +444,7 @@ public class KeycloakServiceTest {
         when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
 
         // Act
-        var userProfile = keycloakService.registerUser(registerUser, Optional.empty());
+        var userProfile = keycloakService.registerUser(registerUser);
         // Assert
         assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
     }
@@ -460,6 +460,7 @@ public class KeycloakServiceTest {
         registerUser.setLastName("LName");
         registerUser.setPassword("Password");
         registerUser.setPhone("9999999999");
+        registerUser.setCode(Optional.of("PROMO_CODE"));
 
         var userRepresentation = new UserRepresentation();
         userRepresentation.setEmail("test@email.com");
@@ -483,7 +484,7 @@ public class KeycloakServiceTest {
         when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
 
         // Act
-        var userProfile = keycloakService.registerUser(registerUser, Optional.of("PROMO"));
+        var userProfile = keycloakService.registerUser(registerUser);
         // Assert
         assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
         assertThat(userProfile.isEmailVerified()).isEqualTo(true);
@@ -516,7 +517,7 @@ public class KeycloakServiceTest {
         when(usersResourceSpy.create(any(UserRepresentation.class))).thenReturn(responseMock);
 
         // Act & Assert
-        assertThrows(UserExistsException.class, () -> keycloakService.registerUser(registerUser, Optional.empty()));
+        assertThrows(UserExistsException.class, () -> keycloakService.registerUser(registerUser));
     }
 
     @Test()
