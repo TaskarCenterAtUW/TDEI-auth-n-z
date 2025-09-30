@@ -261,7 +261,7 @@ public class authControllerTest {
         registerUser.setLastName("lastname");
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
-        registerUser.setCode(Optional.of("PROMO2024"));
+        registerUser.setCode("PROMO2024");
 
         when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
 

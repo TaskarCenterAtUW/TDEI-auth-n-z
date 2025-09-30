@@ -5,7 +5,6 @@ import org.hibernate.validator.constraints.Length;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.*;
-import java.util.Optional;
 
 @Data
 @Validated
@@ -32,5 +31,5 @@ public class RegisterUser {
     )
     @Length(min = 8, max = 255)
     private String password;
-    private Optional<String> code;
+    private String code;
 }

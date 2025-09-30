@@ -413,9 +413,9 @@ public class KeycloakServiceTest {
     void registerUserTest() throws Exception {
         // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
-//        when(keycloakProperties.getResource()).thenReturn("test");
-//        when(applicationProperties.getKeycloakClientEndpoints())
-//                .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
+        when(keycloakProperties.getResource()).thenReturn("test");
+        when(applicationProperties.getKeycloakClientEndpoints())
+                .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
         var registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("FName");
@@ -460,7 +460,7 @@ public class KeycloakServiceTest {
         registerUser.setLastName("LName");
         registerUser.setPassword("Password");
         registerUser.setPhone("9999999999");
-        registerUser.setCode(Optional.of("PROMO_CODE"));
+        registerUser.setCode("PROMO_CODE");
 
         var userRepresentation = new UserRepresentation();
         userRepresentation.setEmail("test@email.com");
