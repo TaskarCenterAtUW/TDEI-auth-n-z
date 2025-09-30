@@ -444,9 +444,49 @@ public class KeycloakServiceTest {
         when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
 
         // Act
-        var userProfile = keycloakService.registerUser(registerUser);
+        var userProfile = keycloakService.registerUser(registerUser, Optional.empty());
         // Assert
         assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
+    }
+
+    @Test
+    @DisplayName("When registering new user with promo code , Expect to return userprofile on success")
+    void registerUserWithPromoTest() throws Exception {
+        // Arrange
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        var registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("FName");
+        registerUser.setLastName("LName");
+        registerUser.setPassword("Password");
+        registerUser.setPhone("9999999999");
+
+        var userRepresentation = new UserRepresentation();
+        userRepresentation.setEmail("test@email.com");
+        userRepresentation.setFirstName("FName");
+        userRepresentation.setLastName("LName");
+        userRepresentation.setEmailVerified(true);
+        var attributes = new HashMap();
+        attributes.put("phone", Arrays.asList("9999999999"));
+        attributes.put("x-api-key", Arrays.asList("test-x-api-key"));
+        userRepresentation.setAttributes(attributes);
+
+        mockUserInstance();
+
+        var responseMock = mock(Response.class);
+        when(responseMock.getStatus()).thenReturn(201);
+        when(responseMock.getLocation()).thenReturn(new URI("http://localhost:" + TEST_PORT + "/new_user_id"));
+        when(usersResourceSpy.create(any(UserRepresentation.class))).thenReturn(responseMock);
+
+        var usersResourceInlineMock = mock(UserResource.class);
+        when(usersResourceSpy.get(anyString())).thenReturn(usersResourceInlineMock);
+        when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
+
+        // Act
+        var userProfile = keycloakService.registerUser(registerUser, Optional.of("PROMO"));
+        // Assert
+        assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
+        assertThat(userProfile.isEmailVerified()).isEqualTo(true);
     }
 
     @Test
@@ -476,7 +516,7 @@ public class KeycloakServiceTest {
         when(usersResourceSpy.create(any(UserRepresentation.class))).thenReturn(responseMock);
 
         // Act & Assert
-        assertThrows(UserExistsException.class, () -> keycloakService.registerUser(registerUser));
+        assertThrows(UserExistsException.class, () -> keycloakService.registerUser(registerUser, Optional.empty()));
     }
 
     @Test()

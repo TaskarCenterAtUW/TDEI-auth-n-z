@@ -242,10 +242,30 @@ public class authControllerTest {
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
 
-        when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
+        when(keycloakService.registerUser(registerUser, Optional.empty())).thenReturn(new UserProfile());
 
         //Act
-        var user = authController.registerUser(registerUser);
+        var user = authController.registerUser(registerUser, Optional.empty());
+        //Assert
+        assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(user.getBody()).isInstanceOf(UserProfile.class);
+    }
+
+    @Test
+    @DisplayName("When requested to register new user with promo code, Expect to return UserProfile on success")
+    void registerUserWithPromoTest() throws Exception {
+        //Arrange
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("firstname");
+        registerUser.setLastName("lastname");
+        registerUser.setPhone("phone");
+        registerUser.setPassword("password");
+
+        when(keycloakService.registerUser(registerUser, Optional.of("PROMO"))).thenReturn(new UserProfile());
+
+        //Act
+        var user = authController.registerUser(registerUser, Optional.of("PROMO"));
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(UserProfile.class);
@@ -262,10 +282,10 @@ public class authControllerTest {
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
 
-        when(keycloakService.registerUser(registerUser)).thenThrow(new UserExistsException("test@email.com"));
+        when(keycloakService.registerUser(registerUser, Optional.empty())).thenThrow(new UserExistsException("test@email.com"));
 
         //Act & Arrange
-        assertThrows(UserExistsException.class, () -> authController.registerUser(registerUser));
+        assertThrows(UserExistsException.class, () -> authController.registerUser(registerUser, Optional.empty()));
     }
 
     @Test

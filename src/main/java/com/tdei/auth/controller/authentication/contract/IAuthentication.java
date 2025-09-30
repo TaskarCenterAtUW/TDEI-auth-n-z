@@ -73,7 +73,7 @@ public interface IAuthentication {
             produces = {"application/json"},
             consumes = {"application/json"},
             method = RequestMethod.POST)
-    ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception;
+    ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user, @Parameter(in = ParameterIn.QUERY, required = false, description = "Referral Code") @RequestParam() Optional<String> code) throws Exception;
 
     @Operation(summary = "Validates the API Key", description = "Validates the API Key.  Returns the user profile for the validated api key. ",
             tags = {"Authentication"})

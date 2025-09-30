@@ -60,8 +60,8 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user) throws Exception {
-        return ResponseEntity.ok(keycloakService.registerUser(user));
+    public ResponseEntity<UserProfile> registerUser(@Valid @RequestBody RegisterUser user, @RequestParam(name = "code") Optional<String> referral_code) throws Exception {
+        return ResponseEntity.ok(keycloakService.registerUser(user, referral_code));
     }
 
     @Override
