@@ -110,7 +110,7 @@ public class KeycloakService implements IKeycloakService {
 
     @Override
     public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles,
-            Optional<Boolean> affirmative) {
+                                 Optional<Boolean> affirmative) {
         Boolean satisfied = false;
 
         var userRoles = userManagementRepository.getUserRoles(userId);
@@ -316,14 +316,22 @@ public class KeycloakService implements IKeycloakService {
             user.setUsername(userDto.getEmail().trim());
             user.setEmail(userDto.getEmail().trim());
             user.setEmailVerified(false);
+            // Set referral code if present and enable email verified
+            if (userDto.getCode() != null && !userDto.getCode().isEmpty()) {
+                user.setEmailVerified(true);
+            } else {
+                user.setRequiredActions(List.of("VERIFY_EMAIL"));
+            }
             user.setEnabled(true);
-            user.setRequiredActions(List.of("VERIFY_EMAIL"));
 
             // Set user attributes
             Map<String, List<String>> attributes = new HashMap<>();
             attributes.put("x-api-key", List.of(UUID.randomUUID().toString()));
             if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
                 attributes.put("phone", List.of(userDto.getPhone()));
+            }
+            if (userDto.getCode() != null && !userDto.getCode().isEmpty()) {
+                user.setAttributes(Map.of("referral_code", List.of(userDto.getCode())));
             }
             user.setAttributes(attributes);
 
@@ -338,8 +346,11 @@ public class KeycloakService implements IKeycloakService {
             if (createdUserRes.getStatus() == 201) {
                 String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 var newUserResource = usersResource.get(userId);
-                newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
-                        applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
+
+                if (userDto.getCode() == null || userDto.getCode().isEmpty()) {
+                    newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
+                            applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
+                }
 
                 var createdUser = newUserResource.toRepresentation();
 
