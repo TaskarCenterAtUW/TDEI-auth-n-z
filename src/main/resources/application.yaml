@@ -1,10 +1,11 @@
 server:
-  port: '8080'
+  port: "8080"
 spring:
   application:
     name: tdei-auth
     secret: "${SPRING_APPLICATION_SECRET}"
     secret-ttl: "${SPRING_APPLICATION_SECRET_TTL}"
+    allowed-app-clients: "${SPRING_APPLICATION_ALLOWED_APP_CLIENTS}"
   config:
     import: optional:developer-local-properties.yaml
   datasource:
@@ -18,8 +19,8 @@ spring-doc:
   swagger-ui:
     operationsSorter: alpha
     tagsSorter: alpha
-    disable-swagger-default-url: 'true'
-  writer-with-default-pretty-printer: 'true'
+    disable-swagger-default-url: "true"
+  writer-with-default-pretty-printer: "true"
 swagger:
   description: Authentication/Authorization API, this API is responsible any service related to the authentication and authorization of the user like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the users. This service will be exposed on Azure intranet and can be consumed by Azure intranet applications/services.
   contact:

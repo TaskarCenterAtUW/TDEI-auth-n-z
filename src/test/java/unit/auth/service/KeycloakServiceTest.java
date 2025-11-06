@@ -10,6 +10,7 @@ import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsExceptio
 import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.UserRoles;
 import com.tdei.auth.repository.UserManagementRepository;
+import com.tdei.auth.service.JwtValidationService;
 import com.tdei.auth.service.KeycloakService;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;
@@ -62,6 +63,8 @@ public class KeycloakServiceTest {
     @Mock
     private UserManagementRepository userManagementRepository;
     @Mock
+    private JwtValidationService jwtValidationService;
+    @Mock
     private ApplicationProperties.keycloakProperties keycloakProperties;
     @InjectMocks
     private KeycloakService keycloakService;
@@ -69,8 +72,7 @@ public class KeycloakServiceTest {
     @BeforeAll
     static void init() {
         wireMockServer = new WireMockServer(
-                new WireMockConfiguration().port(TEST_PORT)
-        );
+                new WireMockConfiguration().port(TEST_PORT));
         wireMockServer.start();
         WireMock.configureFor("localhost", TEST_PORT);
     }
@@ -84,7 +86,7 @@ public class KeycloakServiceTest {
     }
 
     private UsersResource mockUserInstance() {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
         when(keycloakProperties.getRealm()).thenReturn("test realm");
         when(keycloakInstance.realm(any())).thenReturn(realmResourceSpy);
@@ -95,32 +97,62 @@ public class KeycloakServiceTest {
     @Test
     @DisplayName("When searching for user by valid api-key, Expect to return User details")
     void getUserByApiKeyTest() throws InvalidKeyException {
-        //Arrange
+        // Arrange
         UsersResource usersResourceSpy = mockUserInstance();
         when(usersResourceSpy.searchByAttributes(any())).thenReturn(Arrays.asList(new UserRepresentation()));
-        //Act
+        // Act
         var user = keycloakService.getUserByApiKey("test_key");
 
-        //Assert
+        // Assert
         assertThat(user != null);
     }
 
     @Test()
     @DisplayName("When searching for user by invalid api-key, Expect to throw InvalidKeyException")
     void getUserByApiKeyTest2() {
-        //Arrange
+        // Arrange
         UsersResource usersResourceSpy = mockUserInstance();
         when(usersResourceSpy.searchByAttributes(any())).thenReturn(Arrays.asList());
 
-        //Act & Assert
+        // Act & Assert
         assertThrows(InvalidKeyException.class, () -> keycloakService.getUserByApiKey("test_key"));
+    }
+
+    @Test()
+    @DisplayName("When allowed tdei client application want to validate the access token, Expect to return userinfo")
+    void getUserByAccessTokenTest0() {
+        // Arrange
+        // Just mock the service method to return what you need
+        io.jsonwebtoken.Claims mockClaims = mock(io.jsonwebtoken.Claims.class);
+        when(mockClaims.getExpiration()).thenReturn(new java.util.Date(System.currentTimeMillis() + 3600000));
+        when(mockClaims.get("azp", String.class)).thenReturn("test-client");
+        when(mockClaims.getSubject()).thenReturn("test-subject");
+        var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
+        var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
+        when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
+        when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
+        when(applicationProperties.getSpring().getApplication().getAllowedAppClients()).thenReturn(Arrays.asList("test-client"));
+        when(jwtValidationService.validateJwtToken(anyString())).thenReturn(mockClaims);
+
+        // Act & Assert
+        assertThat(keycloakService.getUserByAccessToken("test_access_token").get().getPreferred_username()
+                .equals("test-client"));
     }
 
     @Test()
     @DisplayName("When searching for user by valid access token, Expect to return userinfo")
     void getUserByAccessTokenTest() {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        io.jsonwebtoken.Claims mockClaims = mock(io.jsonwebtoken.Claims.class);
+        when(mockClaims.getExpiration()).thenReturn(new java.util.Date(System.currentTimeMillis() + 3600000));
+        when(mockClaims.get("azp", String.class)).thenReturn("non-client");
+        var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
+        var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
+        when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
+        when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
+        when(applicationProperties.getSpring().getApplication().getAllowedAppClients()).thenReturn(Arrays.asList("test-client"));
+        when(jwtValidationService.validateJwtToken(anyString())).thenReturn(mockClaims);
         when(keycloakProperties.getResource()).thenReturn("test");
         var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
         when(keycloakProperties.getCredentials()).thenReturn(mockCred);
@@ -137,15 +169,25 @@ public class KeycloakServiceTest {
                                 "}")
                         .withHeader("Content-Type", String.valueOf(equalTo("application/json")))
                         .withStatus(OK.value())));
-        //Act & Assert
-        assertThat(keycloakService.getUserByAccessToken("test_access_token").get().getPreferred_username().equals("admin"));
+        // Act & Assert
+        assertThat(keycloakService.getUserByAccessToken("test_access_token").get().getPreferred_username()
+                .equals("admin"));
     }
 
     @Test()
     @DisplayName("When searching for user by invalid access token, Expect to throw InvalidAccessTokenException")
     void getUserByAccessTokenTest2() {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        io.jsonwebtoken.Claims mockClaims = mock(io.jsonwebtoken.Claims.class);
+        when(mockClaims.getExpiration()).thenReturn(new java.util.Date(System.currentTimeMillis() + 3600000));
+        when(mockClaims.get("azp", String.class)).thenReturn("non-client");
+        var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
+        var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
+        when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
+        when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
+        when(applicationProperties.getSpring().getApplication().getAllowedAppClients()).thenReturn(Arrays.asList("test-client"));
+        when(jwtValidationService.validateJwtToken(anyString())).thenReturn(mockClaims);
         when(keycloakProperties.getResource()).thenReturn("test");
         var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
         when(keycloakProperties.getCredentials()).thenReturn(mockCred);
@@ -157,14 +199,15 @@ public class KeycloakServiceTest {
                 .willReturn(aResponse()
                         .withStatus(NOT_FOUND.value())));
 
-        //Act & Assert
-        assertThrows(InvalidAccessTokenException.class, () -> keycloakService.getUserByAccessToken("test_access_token"));
+        // Act & Assert
+        assertThrows(InvalidAccessTokenException.class,
+                () -> keycloakService.getUserByAccessToken("test_access_token"));
     }
 
     @Test
     @DisplayName("When searching for the user by valid user name, Expect to return userinfo")
     void getUserByUserNameTest() throws Exception {
-        //Arrange
+        // Arrange
         UsersResource usersResourceSpy = mockUserInstance();
         var userResponse = new UserRepresentation();
         userResponse.setEmail("test@email.com");
@@ -174,184 +217,205 @@ public class KeycloakServiceTest {
         userResponse.setAttributes(attributes);
         when(usersResourceSpy.search(anyString(), anyBoolean())).thenReturn(Arrays.asList(userResponse));
 
-        //Act
+        // Act
         var user = keycloakService.getUserByUserName("test_username");
 
-        //Assert
+        // Assert
         assertThat(user.getEmail().equals(userResponse.getEmail()));
     }
 
     @Test
     @DisplayName("When searching for the user by invalid user name, Expect to return null")
     void getUserByUserNameTest2() throws Exception {
-        //Arrange
+        // Arrange
         UsersResource usersResourceSpy = mockUserInstance();
         when(usersResourceSpy.search(anyString(), anyBoolean())).thenReturn(Arrays.asList());
 
-        //Act
+        // Act
         var user = keycloakService.getUserByUserName("test_username_invalid");
 
-        //Assert
+        // Assert
         assertThat(user).isNull();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid , projectGroupId and roles, Expect to return true")
     void hasPermissionTest() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"),
+                new String[]{"flex_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, role and invalid projectGroupId, Expect to return false")
     void hasPermissionTest2() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id_2"), new String[]{"flex_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id_2"),
+                new String[]{"flex_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, role and empty projectGroupId, Expect to return true")
     void hasPermissionTest3() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(), new String[]{"flex_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(),
+                new String[]{"flex_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, projectGroupId and invalid roles, Expect to return false")
     void hasPermissionTest4() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"pathways_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"),
+                new String[]{"pathways_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, empty projectGroupId and invalid roles, Expect to return false")
     void hasPermissionTest5() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(), new String[]{"pathways_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(),
+                new String[]{"pathways_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, projectGroupId , must exists roles and on partial role match, Expect to return false")
     void hasPermissionTest6() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"),
+                new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, projectGroupId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
     void hasPermissionTest8() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.of("test_project_group_id"),
+                new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, empty projectGroupId , must exists roles and on partial role match, Expect to return false")
     void hasPermissionTest7() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(),
+                new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(true));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isFalse();
     }
 
     @Test
     @DisplayName("When validating user permissions with valid userid, empty projectGroupId , must exists roles and on partial role match, Expect to return true when affirmative flag is false")
     void hasPermissionTest9() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("flex_data_generator");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(),
+                new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
     @DisplayName("When validating user permissions where user is admin, Expect to return true")
     void hasPermissionTest10() {
-        //Arrange
+        // Arrange
         MockitoAnnotations.openMocks(this);
         UserRoles flexDataRole = getUserRoles("tdei_admin");
-        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString())).thenReturn(Arrays.asList(flexDataRole));
+        when(userManagementRepository.getUserRoles(ArgumentMatchers.anyString()))
+                .thenReturn(Arrays.asList(flexDataRole));
 
-        //Act
-        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(), new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
+        // Act
+        var satisfied = keycloakService.hasPermission("test_user_id", Optional.empty(),
+                new String[]{"flex_data_generator", "pathways_data_generator"}, Optional.of(false));
 
-        //Assert
+        // Assert
         assertThat(satisfied).isTrue();
     }
 
     @Test
     @DisplayName("When registering new user , Expect to return userprofile on success")
     void registerUserTest() throws Exception {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
         when(keycloakProperties.getResource()).thenReturn("test");
-        when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
+        when(applicationProperties.getKeycloakClientEndpoints())
+                .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
         var registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("FName");
@@ -379,16 +443,57 @@ public class KeycloakServiceTest {
         when(usersResourceSpy.get(anyString())).thenReturn(usersResourceInlineMock);
         when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
 
-        //Act
+        // Act
         var userProfile = keycloakService.registerUser(registerUser);
-        //Assert
+        // Assert
         assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
+    }
+
+    @Test
+    @DisplayName("When registering new user with promo code , Expect to return userprofile on success")
+    void registerUserWithPromoTest() throws Exception {
+        // Arrange
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        var registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("FName");
+        registerUser.setLastName("LName");
+        registerUser.setPassword("Password");
+        registerUser.setPhone("9999999999");
+        registerUser.setCode("PROMO_CODE");
+
+        var userRepresentation = new UserRepresentation();
+        userRepresentation.setEmail("test@email.com");
+        userRepresentation.setFirstName("FName");
+        userRepresentation.setLastName("LName");
+        userRepresentation.setEmailVerified(true);
+        var attributes = new HashMap();
+        attributes.put("phone", Arrays.asList("9999999999"));
+        attributes.put("x-api-key", Arrays.asList("test-x-api-key"));
+        userRepresentation.setAttributes(attributes);
+
+        mockUserInstance();
+
+        var responseMock = mock(Response.class);
+        when(responseMock.getStatus()).thenReturn(201);
+        when(responseMock.getLocation()).thenReturn(new URI("http://localhost:" + TEST_PORT + "/new_user_id"));
+        when(usersResourceSpy.create(any(UserRepresentation.class))).thenReturn(responseMock);
+
+        var usersResourceInlineMock = mock(UserResource.class);
+        when(usersResourceSpy.get(anyString())).thenReturn(usersResourceInlineMock);
+        when((usersResourceInlineMock).toRepresentation()).thenReturn(userRepresentation);
+
+        // Act
+        var userProfile = keycloakService.registerUser(registerUser);
+        // Assert
+        assertThat(userProfile.getEmail()).isEqualTo(registerUser.getEmail());
+        assertThat(userProfile.isEmailVerified()).isEqualTo(true);
     }
 
     @Test
     @DisplayName("When registering new user with existing user email , Expect to throw UserExistsException")
     void registerUserTest2() {
-        //Arrange
+        // Arrange
         var registerUser = new RegisterUser();
         registerUser.setEmail("test@email.com");
         registerUser.setFirstName("FName");
@@ -411,14 +516,14 @@ public class KeycloakServiceTest {
         when(responseMock.getStatus()).thenReturn(409);
         when(usersResourceSpy.create(any(UserRepresentation.class))).thenReturn(responseMock);
 
-        //Act & Assert
+        // Act & Assert
         assertThrows(UserExistsException.class, () -> keycloakService.registerUser(registerUser));
     }
 
     @Test()
     @DisplayName("When requested to re-issue token given valid refresh token, Expect to return TokenResponse on success")
     void reIssueToken() {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
         when(keycloakProperties.getResource()).thenReturn("test");
         var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
@@ -439,17 +544,17 @@ public class KeycloakServiceTest {
                         .withHeader("Content-Type", String.valueOf(equalTo("application/json")))
                         .withStatus(OK.value())));
 
-        //Act
+        // Act
         var result = keycloakService.reIssueToken("valid_refresh_token");
 
-        //Assert
+        // Assert
         assertThat(result).isNotNull();
     }
 
     @Test()
     @DisplayName("When requested to re-issue token given expired refresh token, Expect to throw InvalidAccessTokenException")
     void reIssueToken2() {
-        //Arrange
+        // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
         when(keycloakProperties.getResource()).thenReturn("test");
         var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
@@ -470,15 +575,14 @@ public class KeycloakServiceTest {
                         .withHeader("Content-Type", String.valueOf(equalTo("application/json")))
                         .withStatus(NOT_FOUND.value())));
 
-        //Act & Assert
+        // Act & Assert
         assertThrows(InvalidAccessTokenException.class, () -> keycloakService.reIssueToken("expired_refresh_token"));
     }
-
 
     @Test()
     @DisplayName("When requested to generate secret token, Expect to return secret token")
     void generateSecretTest() {
-        //Arrange
+        // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
         String secretString = Encoders.BASE64.encode(key.getEncoded());
         var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
@@ -488,17 +592,17 @@ public class KeycloakServiceTest {
         when(springPropertiesApplicationMock.getSecretTtl()).thenReturn(1234);
         when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
 
-        //Act
+        // Act
         var result = keycloakService.generateSecret();
 
-        //Assert
+        // Assert
         assertThat(result).isNotBlank();
     }
 
     @Test()
     @DisplayName("When requested to validate secret token, Expect to return true on success")
     void validateSecret() {
-        //Arrange
+        // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
         String secretString = Encoders.BASE64.encode(key.getEncoded());
 
@@ -509,17 +613,17 @@ public class KeycloakServiceTest {
         when(springPropertiesApplicationMock.getSecretTtl()).thenReturn(1234);
         when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
 
-        //Act
+        // Act
         var secretToken = keycloakService.generateSecret();
         var result = keycloakService.validateSecret(secretToken);
-        //Assert
+        // Assert
         assertThat(result).isTrue();
     }
 
     @Test()
     @DisplayName("When requested to validate invalid secret token, Expect to return false")
     void validateSecret2() {
-        //Arrange
+        // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
         String secretString = Encoders.BASE64.encode(key.getEncoded());
 
@@ -529,9 +633,9 @@ public class KeycloakServiceTest {
         when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
         when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
 
-        //Act
+        // Act
         var result = keycloakService.validateSecret("invalid_secretToken");
-        //Assert
+        // Assert
         assertThat(result).isFalse();
     }
 
@@ -556,10 +660,10 @@ public class KeycloakServiceTest {
     @Test
     @DisplayName("When regenerating API key for invalid user, Expect to throw ResourceNotFoundException")
     void regenerateAPIKeyInvalidUser() {
-        //Arrange
+        // Arrange
         UsersResource usersResourceSpy = mockUserInstance();
         when(usersResourceSpy.search(anyString(), anyBoolean())).thenReturn(Arrays.asList());
-        //Act & Assert
+        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> keycloakService.regenerateAPIKey("invalid_username"));
     }
 

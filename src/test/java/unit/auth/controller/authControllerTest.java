@@ -252,6 +252,27 @@ public class authControllerTest {
     }
 
     @Test
+    @DisplayName("When requested to register new user with promo code, Expect to return UserProfile on success")
+    void registerUserWithPromoTest() throws Exception {
+        //Arrange
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("firstname");
+        registerUser.setLastName("lastname");
+        registerUser.setPhone("phone");
+        registerUser.setPassword("password");
+        registerUser.setCode("PROMO2024");
+
+        when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
+
+        //Act
+        var user = authController.registerUser(registerUser);
+        //Assert
+        assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(user.getBody()).isInstanceOf(UserProfile.class);
+    }
+
+    @Test
     @DisplayName("When requested to register new user with existing email, Expect to throw UserExistsException")
     void registerUserTest2() throws Exception {
         //Arrange
