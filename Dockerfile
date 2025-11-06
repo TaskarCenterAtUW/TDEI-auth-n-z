@@ -1,5 +1,5 @@
 # Use an official OpenJDK runtime as the base image
-FROM openjdk:17-jdk-slim-bullseye as builder
+FROM eclipse-temurin:17-jdk-jammy as builder
 
 # Set the working directory inside the Docker image
 WORKDIR /app
@@ -16,7 +16,7 @@ COPY . .
 # Build the application using Maven
 RUN mvn clean package -DskipTests
 
-FROM openjdk:17-jdk-slim-bullseye
+FROM eclipse-temurin:17-jdk-jammy
 #Create empty jar file
 RUN touch application.jar
 #Copy generated jar and overwrite application.jar
