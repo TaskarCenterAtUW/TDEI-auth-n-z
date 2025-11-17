@@ -32,11 +32,14 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ProcessingException;
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @RequiredArgsConstructor
 @Service
@@ -45,15 +48,17 @@ public class KeycloakService implements IKeycloakService {
     private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
-
+    private final JwtValidationService jwtValidationService;
     @Autowired
     private UserManagementRepository userManagementRepository;
 
     private Key getSigningKey() {
-        //The JWT signature algorithm we will be using to sign the token
+        // The JWT signature algorithm we will be using to sign the token
         signatureAlgorithm = SignatureAlgorithm.HS256;
-        //We will sign our JWT with our ApiKey secret, which will come from env configuration
-        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(applicationProperties.getSpring().getApplication().getSecret());
+        // We will sign our JWT with our ApiKey secret, which will come from env
+        // configuration
+        byte[] apiKeySecretBytes = DatatypeConverter
+                .parseBase64Binary(applicationProperties.getSpring().getApplication().getSecret());
         Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
         return signingKey;
     }
@@ -61,13 +66,32 @@ public class KeycloakService implements IKeycloakService {
     public Optional<UserRepresentation> getUserByApiKey(String apiKey) throws InvalidKeyException {
         UsersResource instance = getUserInstance();
         List<UserRepresentation> user = instance.searchByAttributes(String.format("x-api-key:%s", apiKey));
-        if (user.isEmpty()) throw new InvalidKeyException("Invalid API Key exception");
+        if (user.isEmpty())
+            throw new InvalidKeyException("Invalid API Key exception");
         return user.stream().findFirst();
     }
 
     public Optional<KUserInfo> getUserByAccessToken(String accessToken) {
         try {
-            KeyclockUserClient keyclockUserClient = KeyclockUserClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
+            Claims claims = jwtValidationService.validateJwtToken(accessToken);
+
+            if (claims.getExpiration().before(new java.util.Date())) {
+                throw new InvalidAccessTokenException("Invalid/Expired Access Token");
+            }
+
+            String client = claims.get("azp", String.class);
+
+            // Check if client is application client and verify with allowed app clients
+            if (applicationProperties.getSpring().getApplication().getAllowedAppClients().contains(client)) {
+                KUserInfo user = new KUserInfo();
+                user.setPreferred_username(client);
+                user.setSub(claims.getSubject());
+                return Optional.of(user);
+            }
+
+            // TDEI Client
+            KeyclockUserClient keyclockUserClient = KeyclockUserClient
+                    .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
             ClientCreds creds = new ClientCreds();
             creds.setClient_id(applicationProperties.getKeycloak().getResource());
             creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
@@ -75,83 +99,105 @@ public class KeycloakService implements IKeycloakService {
                     applicationProperties.getKeycloak().getCredentials().getSecret(),
                     accessToken);
             return Optional.of(user);
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
-            log.error("Error getting user by access token", e);
+            log.error("Error validating JWT token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
         }
     }
 
     @Override
-    public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles, Optional<Boolean> affirmative) {
+    public Boolean hasPermission(String userId, Optional<String> projectGroupId, String[] roles,
+                                 Optional<Boolean> affirmative) {
         Boolean satisfied = false;
 
         var userRoles = userManagementRepository.getUserRoles(userId);
 
-        //System admin check, person is allowed to do all action
+        // System admin check, person is allowed to do all action
         if (userRoles.stream().anyMatch(x -> x.getRoleName().equalsIgnoreCase(RoleConstants.TDEI_ADMIN)))
             return true;
 
-        //Check if role exists
+        // Check if role exists
         if (projectGroupId.isPresent() && !projectGroupId.get().isEmpty()) {
             if (userRoles.stream().anyMatch(x -> (x.getProjectGroupId().equals(projectGroupId.get())) &&
-                    (affirmative.isPresent() && affirmative.get() ?
-                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
-                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
-            ))
+                    (affirmative.isPresent() && affirmative.get()
+                            ? Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
+                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))))
                 satisfied = true;
             else
                 satisfied = false;
         } else {
-            if (userRoles.stream().anyMatch(x ->
-                    (affirmative.isPresent() && affirmative.get() ?
-                            Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
-                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))
-            ))
+            if (userRoles.stream()
+                    .anyMatch(x -> (affirmative.isPresent() && affirmative.get()
+                            ? Arrays.stream(roles).allMatch(y -> y.equalsIgnoreCase(x.getRoleName()))
+                            : Arrays.stream(roles).anyMatch(y -> y.equalsIgnoreCase(x.getRoleName())))))
                 satisfied = true;
         }
         return satisfied;
     }
 
-    public AccessTokenResponse getUserToken(LoginModel person) {
+    public AccessTokenResponse getUserToken(LoginModel person) throws TimeoutException {
+
         AccessTokenResponse token = null;
         try {
-            UsersResource usersResource = getUserInstance();
-            List<UserRepresentation> user = usersResource.search(person.getUsername(), true);
+            // Check if the user is an application client
+            if (applicationProperties.getSpring().getApplication().getAllowedAppClients()
+                    .contains(person.getUsername())) {
+                Keycloak keycloak = KeycloakBuilder.builder()
+                        .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
+                        .realm(applicationProperties.getKeycloak().getRealm())
+                        .clientId(person.getUsername())
+                        .clientSecret(person.getPassword())
+                        .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                        .build();
 
-            if (user == null || user.isEmpty())
-                throw new NotFoundException("User not found");
+                token = keycloak.tokenManager().getAccessToken();
+            } else {
 
-            var userInfo = user.stream().findFirst().get();
-            if (userInfo.isEnabled() == false)
-                throw new NotFoundException("User not found");
-            if (userInfo.isEmailVerified() == false) {
-                throw new EmailNotVerifiedException("Email not verified");
+                UsersResource usersResource = getUserInstance();
+                List<UserRepresentation> user = usersResource.search(person.getUsername(), true);
+
+                if (user == null || user.isEmpty())
+                    throw new NotFoundException("User not found");
+
+                var userInfo = user.stream().findFirst().get();
+                if (userInfo.isEnabled() == false)
+                    throw new NotFoundException("User not found");
+                if (userInfo.isEmailVerified() == false) {
+                    throw new EmailNotVerifiedException("Email not verified");
+                }
+                Keycloak keycloak = KeycloakBuilder.builder()
+                        .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
+                        .realm(applicationProperties.getKeycloak().getRealm())
+                        .clientId(applicationProperties.getKeycloak().getResource())
+                        .clientSecret(applicationProperties.getKeycloak().getCredentials().getSecret())
+                        .grantType(OAuth2Constants.PASSWORD)
+                        .username(person.getUsername())
+                        .password(person.getPassword())
+                        .resteasyClient(new ResteasyClientBuilder()
+                                .connectionPoolSize(applicationProperties.getKeycloak().getConnectionPoolSize())
+                                .connectTimeout(applicationProperties.getKeycloak().getConnectionTimeout(),
+                                        TimeUnit.SECONDS)
+                                .build())
+                        .build();
+
+                token = keycloak.tokenManager().getAccessToken();
             }
-            Keycloak keycloak = KeycloakBuilder.builder()
-                    .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
-                    .realm(applicationProperties.getKeycloak().getRealm())
-                    .clientId(applicationProperties.getKeycloak().getResource())
-                    .clientSecret(applicationProperties.getKeycloak().getCredentials().getSecret())
-                    .grantType(OAuth2Constants.PASSWORD)
-                    .username(person.getUsername())
-                    .password(person.getPassword())
-                    .resteasyClient(new ResteasyClientBuilder()
-                            .connectionPoolSize(1)
-                            .build()
-                    )
-                    .build();
-
-            token = keycloak.tokenManager().getAccessToken();
-
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
         } catch (EmailNotVerifiedException e) {
             log.error("Email not verified", e);
-            throw new EmailNotVerifiedException("Email not verified. Your email address has not been verified. Please verify your email before logging in.");
+            throw new EmailNotVerifiedException(
+                    "Email not verified. Your email address has not been verified. Please verify your email before logging in.");
         } catch (InvalidCredentialsException e) {
             log.error("Invalid credentials", e);
             throw new InvalidCredentialsException("Invalid Credentials");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error authenticating the user", e);
             throw new InvalidCredentialsException("Invalid Credentials");
@@ -161,7 +207,8 @@ public class KeycloakService implements IKeycloakService {
 
     public TokenResponse reIssueToken(String refreshToken) {
         try {
-            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient.connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
+            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient
+                    .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
             LinkedTreeMap user = keyclockTokenClient.refreshToken(
                     applicationProperties.getKeycloak().getResource(),
                     applicationProperties.getKeycloak().getCredentials().getSecret(),
@@ -173,6 +220,9 @@ public class KeycloakService implements IKeycloakService {
             res.setExpiresIn(Math.round((Double) user.get("expires_in")));
             res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
             return res;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error refreshing the token", e);
             throw new InvalidAccessTokenException("Invalid/Expired Access Token");
@@ -183,13 +233,14 @@ public class KeycloakService implements IKeycloakService {
     public String generateSecret() {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
-        //Let's set the JWT Claims
-        //Builds the JWT and serializes it to a compact, URL-safe string
+        // Let's set the JWT Claims
+        // Builds the JWT and serializes it to a compact, URL-safe string
         String secretToken = Jwts.builder().setId(UUID.randomUUID().toString())
                 .setIssuedAt(now)
                 .setSubject("intranet communication")
                 .setIssuer("tdei")
-                .setExpiration(Date.from(now.toInstant().plus(applicationProperties.getSpring().getApplication().getSecretTtl(), ChronoUnit.SECONDS)))
+                .setExpiration(Date.from(now.toInstant()
+                        .plus(applicationProperties.getSpring().getApplication().getSecretTtl(), ChronoUnit.SECONDS)))
                 .signWith(getSigningKey(), signatureAlgorithm)
                 .compact();
         return secretToken;
@@ -198,7 +249,7 @@ public class KeycloakService implements IKeycloakService {
     @Override
     public Boolean validateSecret(String secret) {
         try {
-            //This line will throw an exception if it is not a signed JWS (as expected)
+            // This line will throw an exception if it is not a signed JWS (as expected)
             Jws<Claims> jwt = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
@@ -213,6 +264,9 @@ public class KeycloakService implements IKeycloakService {
             return false;
         } catch (IllegalArgumentException e) {
             return false;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         }
         return true;
     }
@@ -241,6 +295,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error resetting the password", e);
             throw new Exception("Error resetting the password");
@@ -259,18 +316,26 @@ public class KeycloakService implements IKeycloakService {
             user.setUsername(userDto.getEmail().trim());
             user.setEmail(userDto.getEmail().trim());
             user.setEmailVerified(false);
+            // Set referral code if present and enable email verified
+            if (userDto.getCode() != null && !userDto.getCode().isEmpty()) {
+                user.setEmailVerified(true);
+            } else {
+                user.setRequiredActions(List.of("VERIFY_EMAIL"));
+            }
             user.setEnabled(true);
-            user.setRequiredActions(List.of("VERIFY_EMAIL"));
 
-            //Set user attributes
+            // Set user attributes
             Map<String, List<String>> attributes = new HashMap<>();
             attributes.put("x-api-key", List.of(UUID.randomUUID().toString()));
             if (userDto.getPhone() != null && !userDto.getPhone().isEmpty()) {
                 attributes.put("phone", List.of(userDto.getPhone()));
             }
+            if (userDto.getCode() != null && !userDto.getCode().isEmpty()) {
+                user.setAttributes(Map.of("referral_code", List.of(userDto.getCode())));
+            }
             user.setAttributes(attributes);
 
-            //Set the credentials
+            // Set the credentials
             CredentialRepresentation cred = new CredentialRepresentation();
             cred.setType(CredentialRepresentation.PASSWORD);
             cred.setValue(userDto.getPassword());
@@ -281,7 +346,11 @@ public class KeycloakService implements IKeycloakService {
             if (createdUserRes.getStatus() == 201) {
                 String userId = createdUserRes.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 var newUserResource = usersResource.get(userId);
-                newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(), applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
+
+                if (userDto.getCode() == null || userDto.getCode().isEmpty()) {
+                    newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
+                            applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
+                }
 
                 var createdUser = newUserResource.toRepresentation();
 
@@ -296,6 +365,9 @@ public class KeycloakService implements IKeycloakService {
             } else if (createdUserRes.getStatus() == 409) {
                 throw new UserExistsException(userDto.getEmail().trim());
             }
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Failed registering the user", e);
             if (e instanceof UserExistsException)
@@ -321,6 +393,9 @@ public class KeycloakService implements IKeycloakService {
             if (userInfo.getAttributes() != null && userInfo.getAttributes().get("x-api-key") != null)
                 userProfile.setApiKey(userInfo.getAttributes().get("x-api-key").stream().findFirst().get());
             return userProfile;
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error fetching the user information", e);
             throw new Exception("Error fetching the user information");
@@ -342,10 +417,14 @@ public class KeycloakService implements IKeycloakService {
 
             var er = keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
             var te = er.get(userInfo.getId());
-            te.executeActionsEmail(applicationProperties.getKeycloak().getResource(), applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), emailActions);
+            te.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
+                    applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), emailActions);
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error triggering the email", e);
             throw new Exception("Error triggering the email");
@@ -379,6 +458,9 @@ public class KeycloakService implements IKeycloakService {
         } catch (NotFoundException e) {
             log.error("User not found", e);
             throw new ResourceNotFoundException("User not found");
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
         } catch (Exception e) {
             log.error("Error regenerating the API key", e);
             throw new Exception("Error regenerating the API key");

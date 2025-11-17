@@ -2,6 +2,9 @@ package com.tdei.auth.core.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +28,7 @@ public class ApplicationProperties {
             private String secret;
             private int secretTtl;
             private String name;
+            private List<String> allowedAppClients;
         }
     }
 
@@ -50,7 +54,8 @@ public class ApplicationProperties {
     @NoArgsConstructor
     public static class keycloakProperties {
         private String authServerUrl;
-        //private String userUrl;
+        private int connectionPoolSize;
+        private int connectionTimeout;
         private String realm;
         private String resource;
         private KeycloakCreds credentials;

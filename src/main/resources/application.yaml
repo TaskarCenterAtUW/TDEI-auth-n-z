@@ -1,22 +1,26 @@
 server:
-  port: '8080'
+  port: "8080"
 spring:
   application:
     name: tdei-auth
     secret: "${SPRING_APPLICATION_SECRET}"
     secret-ttl: "${SPRING_APPLICATION_SECRET_TTL}"
+    allowed-app-clients: "${SPRING_APPLICATION_ALLOWED_APP_CLIENTS}"
   config:
     import: optional:developer-local-properties.yaml
   datasource:
     username: "${SPRING_DATASOURCE_USERNAME}"
     url: "${SPRING_DATASOURCE_URL}"
     password: "${SPRING_DATASOURCE_PASSWORD}"
+    hikari:
+      maximum-pool-size: "${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:100}"
+      connection-timeout: "${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:15000}"
 spring-doc:
   swagger-ui:
     operationsSorter: alpha
     tagsSorter: alpha
-    disable-swagger-default-url: 'true'
-  writer-with-default-pretty-printer: 'true'
+    disable-swagger-default-url: "true"
+  writer-with-default-pretty-printer: "true"
 swagger:
   description: Authentication/Authorization API, this API is responsible any service related to the authentication and authorization of the user like authenticating the users, issuing the access/refresh tokens, api keys, validating the permissions for the users. This service will be exposed on Azure intranet and can be consumed by Azure intranet applications/services.
   contact:
@@ -29,6 +33,8 @@ Keycloak-client-endpoints:
   base-url: "${KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL}"
   redirect-url: "${KEYCLOAK_CLIENT_ENDPOINTS_REDIRECT_URL}"
 keycloak:
+  connection-pool-size: "${KEYCLOAK_CONNECTION_POOL_SIZE:100}"
+  connection-timeout: "${KEYCLOAK_CONNECTION_TIMEOUT:15}"
   auth-server-url: "${KEYCLOAK_AUTH_SERVER_URL}"
   realm: tdei
   enabled: true

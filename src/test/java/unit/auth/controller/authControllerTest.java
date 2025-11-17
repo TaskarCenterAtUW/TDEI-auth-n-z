@@ -35,6 +35,7 @@ import javax.validation.ValidatorFactory;
 import java.security.InvalidKeyException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,7 +107,7 @@ public class authControllerTest {
 
     @Test
     @DisplayName("When authenticating user with valid credentials, Expect to return HTTP Status 200 with TokenResponse details")
-    void authenticateTest() {
+    void authenticateTest() throws TimeoutException {
         //Arrange
         LoginModel loginModel = new LoginModel();
         loginModel.setUsername("test_username");
@@ -144,7 +145,7 @@ public class authControllerTest {
 
     @Test
     @DisplayName("When authenticating user with invalid credentials, Expect to throw InvalidCredentialsException")
-    void authenticateTest2() {
+    void authenticateTest2() throws TimeoutException {
         //Arrange
         LoginModel loginModel = new LoginModel();
         loginModel.setUsername("test_username");
@@ -240,6 +241,27 @@ public class authControllerTest {
         registerUser.setLastName("lastname");
         registerUser.setPhone("phone");
         registerUser.setPassword("password");
+
+        when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
+
+        //Act
+        var user = authController.registerUser(registerUser);
+        //Assert
+        assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(user.getBody()).isInstanceOf(UserProfile.class);
+    }
+
+    @Test
+    @DisplayName("When requested to register new user with promo code, Expect to return UserProfile on success")
+    void registerUserWithPromoTest() throws Exception {
+        //Arrange
+        RegisterUser registerUser = new RegisterUser();
+        registerUser.setEmail("test@email.com");
+        registerUser.setFirstName("firstname");
+        registerUser.setLastName("lastname");
+        registerUser.setPhone("phone");
+        registerUser.setPassword("password");
+        registerUser.setCode("PROMO2024");
 
         when(keycloakService.registerUser(registerUser)).thenReturn(new UserProfile());
 

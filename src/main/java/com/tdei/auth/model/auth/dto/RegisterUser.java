@@ -31,4 +31,5 @@ public class RegisterUser {
     )
     @Length(min = 8, max = 255)
     private String password;
+    private String code;
 }
