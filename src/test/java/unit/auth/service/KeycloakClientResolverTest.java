@@ -9,38 +9,30 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @Tag("Unit")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class KeycloakClientResolverTest {
 
-    @Mock
-    private TdeiKeycloakProperties tdeiKeycloakProperties;
+    @Spy
+    private TdeiKeycloakProperties tdeiKeycloakProperties = new TdeiKeycloakProperties();
 
     @InjectMocks
     private KeycloakClientResolver keycloakClientResolver;
 
     @BeforeEach
     void setUp() {
-        Map<String, String> clients = new HashMap<>();
-        clients.put("tdei-gateway", "gateway-secret");
-        clients.put("tdei-portal", "portal-secret");
-
-        when(tdeiKeycloakProperties.getDefaultClientId()).thenReturn("tdei-gateway");
-        when(tdeiKeycloakProperties.getClients()).thenReturn(clients);
+        tdeiKeycloakProperties.setDefaultClientId("tdei-gateway");
+        tdeiKeycloakProperties.setClients("tdei-gateway:gateway-secret;tdei-portal:portal-secret");
     }
 
     @Test
@@ -73,5 +65,14 @@ class KeycloakClientResolverTest {
     void getDefaultClientIdTest() {
         assertEquals("tdei-gateway", keycloakClientResolver.getDefaultClientId());
         assertDoesNotThrow(() -> keycloakClientResolver.getClientSecret("tdei-gateway"));
+    }
+
+    @Test
+    @DisplayName("When clients env is empty, Expect IllegalStateException mentioning KEYCLOAK_AUTH_CLIENTS_CREDS")
+    void emptyClientsTest() {
+        tdeiKeycloakProperties.setClients("");
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> keycloakClientResolver.validateClientId("tdei-gateway"));
+        assertEquals(true, ex.getMessage().contains("KEYCLOAK_AUTH_CLIENTS_CREDS"));
     }
 }

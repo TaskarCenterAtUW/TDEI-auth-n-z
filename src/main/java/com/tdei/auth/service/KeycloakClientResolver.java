@@ -5,6 +5,8 @@ import com.tdei.auth.core.config.exception.handler.exceptions.InvalidSsoRequestE
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class KeycloakClientResolver {
@@ -30,20 +32,32 @@ public class KeycloakClientResolver {
 
     public String getClientSecret(String clientId) {
         validateClientId(clientId);
-        return tdeiKeycloakProperties.getClients().get(clientId);
+        return clients().get(clientId);
     }
 
     public void validateClientId(String clientId) {
         if (clientId == null || clientId.isBlank()) {
             throw new InvalidSsoRequestException("client_id is required");
         }
-        var clients = tdeiKeycloakProperties.getClients();
-        if (clients == null || !clients.containsKey(clientId)) {
-            throw new InvalidSsoRequestException("Unknown client_id: " + clientId);
+        Map<String, String> clients = clients();
+        if (clients.isEmpty()) {
+            throw new IllegalStateException(
+                    "tdei.keycloak.clients is empty. Set KEYCLOAK_AUTH_CLIENTS_CREDS "
+                            + "(JSON {\"client-id\":\"secret\"} or client-id:secret;...). "
+                            + "Raw value present=" + (tdeiKeycloakProperties.getClients() != null
+                            && !tdeiKeycloakProperties.getClients().isBlank()));
+        }
+        if (!clients.containsKey(clientId)) {
+            throw new InvalidSsoRequestException(
+                    "Unknown client_id: " + clientId + ". Configured client ids: " + clients.keySet());
         }
         String secret = clients.get(clientId);
         if (secret == null || secret.isBlank()) {
             throw new InvalidSsoRequestException("Secret not configured for client_id: " + clientId);
         }
+    }
+
+    private Map<String, String> clients() {
+        return tdeiKeycloakProperties.parsedClients();
     }
 }

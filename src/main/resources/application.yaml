@@ -43,8 +43,8 @@ keycloak:
   use-resource-role-mappings: true
 tdei:
   keycloak:
-    default-client-id: "${KEYCLOAK_DEFAULT_CLIENT_ID:}"
-    clients: "${KEYCLOAK_AUTH_CLIENTS_CREDS:}"
+    default-client-id: "${TDEI_KEYCLOAK_DEFAULT_CLIENT_ID:}"
+    clients: "${TDEI_KEYCLOAK_CLIENTS:}"
 logging:
   level:
     org.keycloak: DEBUG
