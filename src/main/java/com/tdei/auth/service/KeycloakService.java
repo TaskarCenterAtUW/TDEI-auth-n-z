@@ -3,6 +3,7 @@ package com.tdei.auth.service;
 import com.google.gson.internal.LinkedTreeMap;
 import com.tdei.auth.constants.RoleConstants;
 import com.tdei.auth.core.config.ApplicationProperties;
+import com.tdei.auth.core.config.JwtSigningKeyProvider;
 import com.tdei.auth.core.config.exception.handler.exceptions.*;
 import com.tdei.auth.mapper.UserProfileMapper;
 import com.tdei.auth.model.auth.dto.ClientCreds;
@@ -19,10 +20,8 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -30,37 +29,78 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
-import javax.xml.bind.DatatypeConverter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @RequiredArgsConstructor
 @Service
 @Slf4j
 public class KeycloakService implements IKeycloakService {
-    private static SignatureAlgorithm signatureAlgorithm;
     private final Keycloak keycloakInstance;
     private final ApplicationProperties applicationProperties;
     private final JwtValidationService jwtValidationService;
+    private final JwtSigningKeyProvider jwtSigningKeyProvider;
+    private final KeycloakClientResolver keycloakClientResolver;
+    private final KeycloakClientFactory keycloakClientFactory;
     @Autowired
     private UserManagementRepository userManagementRepository;
 
-    private Key getSigningKey() {
-        // The JWT signature algorithm we will be using to sign the token
-        signatureAlgorithm = SignatureAlgorithm.HS256;
-        // We will sign our JWT with our ApiKey secret, which will come from env
-        // configuration
-        byte[] apiKeySecretBytes = DatatypeConverter
-                .parseBase64Binary(applicationProperties.getSpring().getApplication().getSecret());
-        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
-        return signingKey;
+    @Override
+    public String buildAuthorizationRedirectUrl(String redirectUri, String state, String clientId) {
+        String authServerUrl = applicationProperties.getKeycloak().getAuthServerUrl();
+        String realm = applicationProperties.getKeycloak().getRealm();
+
+        try {
+            return String.format("%s/realms/%s/protocol/openid-connect/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=openid&state=%s",
+                    authServerUrl,
+                    realm,
+                    encodeQueryParam(clientId),
+                    encodeQueryParam(redirectUri),
+                    encodeQueryParam(state));
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Failed to encode authorization URL", e);
+        }
+    }
+
+    @Override
+    public TokenResponse exchangeAuthorizationCode(String code, String redirectUri, String clientId) {
+        try {
+            KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient
+                    .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
+            LinkedTreeMap tokenResponse = keyclockTokenClient.exchangeCode(
+                    clientId,
+                    keycloakClientResolver.getClientSecret(clientId),
+                    OAuth2Constants.AUTHORIZATION_CODE,
+                    code,
+                    redirectUri);
+            return mapTokenResponse(tokenResponse);
+        } catch (ProcessingException ex) {
+            log.error("Connection timeout", ex);
+            throw new GatewayTimeoutException("Connection Timeout");
+        } catch (Exception e) {
+            log.error("Error exchanging authorization code", e);
+            throw new InvalidCredentialsException("Invalid Credentials");
+        }
+    }
+
+    private String encodeQueryParam(String value) throws UnsupportedEncodingException {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+    }
+
+    private TokenResponse mapTokenResponse(LinkedTreeMap tokenResponse) {
+        TokenResponse res = new TokenResponse();
+        res.setToken(tokenResponse.get("access_token").toString());
+        res.setRefreshToken(tokenResponse.get("refresh_token").toString());
+        res.setExpiresIn(Math.round((Double) tokenResponse.get("expires_in")));
+        res.setRefreshExpiresIn(Math.round((Double) tokenResponse.get("refresh_expires_in")));
+        return res;
     }
 
     public Optional<UserRepresentation> getUserByApiKey(String apiKey) throws InvalidKeyException {
@@ -92,12 +132,12 @@ public class KeycloakService implements IKeycloakService {
             // TDEI Client
             KeyclockUserClient keyclockUserClient = KeyclockUserClient
                     .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/userinfo");
+            String userClientId = client;
+            String userClientSecret = keycloakClientResolver.getClientSecret(userClientId);
             ClientCreds creds = new ClientCreds();
-            creds.setClient_id(applicationProperties.getKeycloak().getResource());
-            creds.setClient_secret(applicationProperties.getKeycloak().getCredentials().getSecret());
-            KUserInfo user = keyclockUserClient.userInfo(applicationProperties.getKeycloak().getResource(),
-                    applicationProperties.getKeycloak().getCredentials().getSecret(),
-                    accessToken);
+            creds.setClient_id(userClientId);
+            creds.setClient_secret(userClientSecret);
+            KUserInfo user = keyclockUserClient.userInfo(userClientId, userClientSecret, accessToken);
             return Optional.of(user);
         } catch (ProcessingException ex) {
             log.error("Connection timeout", ex);
@@ -145,13 +185,8 @@ public class KeycloakService implements IKeycloakService {
             // Check if the user is an application client
             if (applicationProperties.getSpring().getApplication().getAllowedAppClients()
                     .contains(person.getUsername())) {
-                Keycloak keycloak = KeycloakBuilder.builder()
-                        .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
-                        .realm(applicationProperties.getKeycloak().getRealm())
-                        .clientId(person.getUsername())
-                        .clientSecret(person.getPassword())
-                        .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                        .build();
+                Keycloak keycloak = keycloakClientFactory.buildAppClientCredentialsClient(
+                        person.getUsername(), person.getPassword());
 
                 token = keycloak.tokenManager().getAccessToken();
             } else {
@@ -168,20 +203,9 @@ public class KeycloakService implements IKeycloakService {
                 if (userInfo.isEmailVerified() == false) {
                     throw new EmailNotVerifiedException("Email not verified");
                 }
-                Keycloak keycloak = KeycloakBuilder.builder()
-                        .serverUrl(applicationProperties.getKeycloak().getAuthServerUrl())
-                        .realm(applicationProperties.getKeycloak().getRealm())
-                        .clientId(applicationProperties.getKeycloak().getResource())
-                        .clientSecret(applicationProperties.getKeycloak().getCredentials().getSecret())
-                        .grantType(OAuth2Constants.PASSWORD)
-                        .username(person.getUsername())
-                        .password(person.getPassword())
-                        .resteasyClient(new ResteasyClientBuilder()
-                                .connectionPoolSize(applicationProperties.getKeycloak().getConnectionPoolSize())
-                                .connectTimeout(applicationProperties.getKeycloak().getConnectionTimeout(),
-                                        TimeUnit.SECONDS)
-                                .build())
-                        .build();
+                String clientId = keycloakClientResolver.resolveClientId(person.getClientId());
+                Keycloak keycloak = keycloakClientFactory.buildPasswordGrantClient(
+                        clientId, person.getUsername(), person.getPassword());
 
                 token = keycloak.tokenManager().getAccessToken();
             }
@@ -205,21 +229,17 @@ public class KeycloakService implements IKeycloakService {
         return token;
     }
 
-    public TokenResponse reIssueToken(String refreshToken) {
+    public TokenResponse reIssueToken(String refreshToken, String clientId) {
         try {
+            String resolvedClientId = keycloakClientResolver.resolveClientId(clientId);
             KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient
                     .connect(applicationProperties.getKeycloakClientEndpoints().getBaseUrl() + "/token");
             LinkedTreeMap user = keyclockTokenClient.refreshToken(
-                    applicationProperties.getKeycloak().getResource(),
-                    applicationProperties.getKeycloak().getCredentials().getSecret(),
+                    resolvedClientId,
+                    keycloakClientResolver.getClientSecret(resolvedClientId),
                     refreshToken,
                     "refresh_token");
-            TokenResponse res = new TokenResponse();
-            res.setToken(user.get("access_token").toString());
-            res.setRefreshToken(user.get("refresh_token").toString());
-            res.setExpiresIn(Math.round((Double) user.get("expires_in")));
-            res.setRefreshExpiresIn(Math.round((Double) user.get("refresh_expires_in")));
-            return res;
+            return mapTokenResponse(user);
         } catch (ProcessingException ex) {
             log.error("Connection timeout", ex);
             throw new GatewayTimeoutException("Connection Timeout");
@@ -241,7 +261,7 @@ public class KeycloakService implements IKeycloakService {
                 .setIssuer("tdei")
                 .setExpiration(Date.from(now.toInstant()
                         .plus(applicationProperties.getSpring().getApplication().getSecretTtl(), ChronoUnit.SECONDS)))
-                .signWith(getSigningKey(), signatureAlgorithm)
+                .signWith(jwtSigningKeyProvider.getSigningKey(), jwtSigningKeyProvider.getSignatureAlgorithm())
                 .compact();
         return secretToken;
     }
@@ -251,7 +271,7 @@ public class KeycloakService implements IKeycloakService {
         try {
             // This line will throw an exception if it is not a signed JWS (as expected)
             Jws<Claims> jwt = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+                    .setSigningKey(jwtSigningKeyProvider.getSigningKey())
                     .build()
                     .parseClaimsJws(secret);
         } catch (ExpiredJwtException e) {
@@ -348,7 +368,8 @@ public class KeycloakService implements IKeycloakService {
                 var newUserResource = usersResource.get(userId);
 
                 if (userDto.getCode() == null || userDto.getCode().isEmpty()) {
-                    newUserResource.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
+                    String clientId = keycloakClientResolver.resolveClientId(userDto.getClientId());
+                    newUserResource.executeActionsEmail(clientId,
                             applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), List.of("VERIFY_EMAIL"));
                 }
 
@@ -417,7 +438,8 @@ public class KeycloakService implements IKeycloakService {
 
             var er = keycloakInstance.realm(applicationProperties.getKeycloak().getRealm()).users();
             var te = er.get(userInfo.getId());
-            te.executeActionsEmail(applicationProperties.getKeycloak().getResource(),
+            String clientId = keycloakClientResolver.resolveClientId(triggerEmailModel.getClientId());
+            te.executeActionsEmail(clientId,
                     applicationProperties.getKeycloakClientEndpoints().getRedirectUrl(), emailActions);
         } catch (NotFoundException e) {
             log.error("User not found", e);

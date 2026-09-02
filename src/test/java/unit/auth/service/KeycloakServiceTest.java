@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.tdei.auth.core.config.ApplicationProperties;
+import com.tdei.auth.core.config.JwtSigningKeyProvider;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
 import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
 import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
@@ -11,6 +12,7 @@ import com.tdei.auth.model.auth.dto.RegisterUser;
 import com.tdei.auth.model.auth.dto.UserRoles;
 import com.tdei.auth.repository.UserManagementRepository;
 import com.tdei.auth.service.JwtValidationService;
+import com.tdei.auth.service.KeycloakClientResolver;
 import com.tdei.auth.service.KeycloakService;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;
@@ -28,6 +30,8 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Response;
@@ -47,6 +51,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 @Tag("Unit")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class KeycloakServiceTest {
     private static WireMockServer wireMockServer;
     private static int TEST_PORT = 8650;
@@ -64,6 +69,10 @@ public class KeycloakServiceTest {
     private UserManagementRepository userManagementRepository;
     @Mock
     private JwtValidationService jwtValidationService;
+    @Mock
+    private JwtSigningKeyProvider jwtSigningKeyProvider;
+    @Mock
+    private KeycloakClientResolver keycloakClientResolver;
     @Mock
     private ApplicationProperties.keycloakProperties keycloakProperties;
     @InjectMocks
@@ -92,6 +101,18 @@ public class KeycloakServiceTest {
         when(keycloakInstance.realm(any())).thenReturn(realmResourceSpy);
         when(realmResourceSpy.users()).thenReturn(usersResourceSpy);
         return usersResourceSpy;
+    }
+
+    private void stubClientSecret(String clientId, String secret) {
+        when(keycloakClientResolver.getClientSecret(clientId)).thenReturn(secret);
+        when(keycloakClientResolver.resolveClientId(clientId)).thenReturn(clientId);
+    }
+
+    private void stubAdminClient(String clientId, String secret) {
+        when(keycloakClientResolver.getDefaultClientId()).thenReturn(clientId);
+        stubClientSecret(clientId, secret);
+        when(keycloakClientResolver.resolveClientId(null)).thenReturn(clientId);
+        when(keycloakClientResolver.resolveClientId("")).thenReturn(clientId);
     }
 
     @Test
@@ -153,10 +174,7 @@ public class KeycloakServiceTest {
         when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
         when(applicationProperties.getSpring().getApplication().getAllowedAppClients()).thenReturn(Arrays.asList("test-client"));
         when(jwtValidationService.validateJwtToken(anyString())).thenReturn(mockClaims);
-        when(keycloakProperties.getResource()).thenReturn("test");
-        var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
-        when(keycloakProperties.getCredentials()).thenReturn(mockCred);
-        when(mockCred.getSecret()).thenReturn("test_secret");
+        stubClientSecret("non-client", "test_secret");
         var mockEndpointUrls = mock(ApplicationProperties.KeycloakEndpointUrls.class);
         when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(mockEndpointUrls);
         when(mockEndpointUrls.getBaseUrl()).thenReturn("http://localhost:" + TEST_PORT);
@@ -188,10 +206,7 @@ public class KeycloakServiceTest {
         when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
         when(applicationProperties.getSpring().getApplication().getAllowedAppClients()).thenReturn(Arrays.asList("test-client"));
         when(jwtValidationService.validateJwtToken(anyString())).thenReturn(mockClaims);
-        when(keycloakProperties.getResource()).thenReturn("test");
-        var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
-        when(keycloakProperties.getCredentials()).thenReturn(mockCred);
-        when(mockCred.getSecret()).thenReturn("test_secret");
+        stubClientSecret("non-client", "test_secret");
         var mockEndpointUrls = mock(ApplicationProperties.KeycloakEndpointUrls.class);
         when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(mockEndpointUrls);
         when(mockEndpointUrls.getBaseUrl()).thenReturn("http://localhost:" + TEST_PORT);
@@ -413,7 +428,7 @@ public class KeycloakServiceTest {
     void registerUserTest() throws Exception {
         // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
-        when(keycloakProperties.getResource()).thenReturn("test");
+        stubAdminClient("test", "test_secret");
         when(applicationProperties.getKeycloakClientEndpoints())
                 .thenReturn(new ApplicationProperties.KeycloakEndpointUrls());
         var registerUser = new RegisterUser();
@@ -525,10 +540,7 @@ public class KeycloakServiceTest {
     void reIssueToken() {
         // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
-        when(keycloakProperties.getResource()).thenReturn("test");
-        var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
-        when(keycloakProperties.getCredentials()).thenReturn(mockCred);
-        when(mockCred.getSecret()).thenReturn("test_secret");
+        stubAdminClient("test", "test_secret");
         var mockEndpointUrls = mock(ApplicationProperties.KeycloakEndpointUrls.class);
         when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(mockEndpointUrls);
         when(mockEndpointUrls.getBaseUrl()).thenReturn("http://localhost:" + TEST_PORT);
@@ -545,7 +557,7 @@ public class KeycloakServiceTest {
                         .withStatus(OK.value())));
 
         // Act
-        var result = keycloakService.reIssueToken("valid_refresh_token");
+        var result = keycloakService.reIssueToken("valid_refresh_token", "test");
 
         // Assert
         assertThat(result).isNotNull();
@@ -556,10 +568,7 @@ public class KeycloakServiceTest {
     void reIssueToken2() {
         // Arrange
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
-        when(keycloakProperties.getResource()).thenReturn("test");
-        var mockCred = mock(ApplicationProperties.keycloakProperties.KeycloakCreds.class);
-        when(keycloakProperties.getCredentials()).thenReturn(mockCred);
-        when(mockCred.getSecret()).thenReturn("test_secret");
+        stubAdminClient("test", "test_secret");
         var mockEndpointUrls = mock(ApplicationProperties.KeycloakEndpointUrls.class);
         when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(mockEndpointUrls);
         when(mockEndpointUrls.getBaseUrl()).thenReturn("http://localhost:" + TEST_PORT);
@@ -576,7 +585,7 @@ public class KeycloakServiceTest {
                         .withStatus(NOT_FOUND.value())));
 
         // Act & Assert
-        assertThrows(InvalidAccessTokenException.class, () -> keycloakService.reIssueToken("expired_refresh_token"));
+        assertThrows(InvalidAccessTokenException.class, () -> keycloakService.reIssueToken("expired_refresh_token", "test"));
     }
 
     @Test()
@@ -584,13 +593,13 @@ public class KeycloakServiceTest {
     void generateSecretTest() {
         // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-        String secretString = Encoders.BASE64.encode(key.getEncoded());
         var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
         var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
         when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
         when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
         when(springPropertiesApplicationMock.getSecretTtl()).thenReturn(1234);
-        when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
+        when(jwtSigningKeyProvider.getSigningKey()).thenReturn(key);
+        when(jwtSigningKeyProvider.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.HS256);
 
         // Act
         var result = keycloakService.generateSecret();
@@ -604,14 +613,14 @@ public class KeycloakServiceTest {
     void validateSecret() {
         // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-        String secretString = Encoders.BASE64.encode(key.getEncoded());
 
         var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
         var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
         when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
         when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
         when(springPropertiesApplicationMock.getSecretTtl()).thenReturn(1234);
-        when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
+        when(jwtSigningKeyProvider.getSigningKey()).thenReturn(key);
+        when(jwtSigningKeyProvider.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.HS256);
 
         // Act
         var secretToken = keycloakService.generateSecret();
@@ -625,13 +634,7 @@ public class KeycloakServiceTest {
     void validateSecret2() {
         // Arrange
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-        String secretString = Encoders.BASE64.encode(key.getEncoded());
-
-        var springPropertiesMock = mock(ApplicationProperties.SpringProperties.class);
-        var springPropertiesApplicationMock = mock(ApplicationProperties.SpringProperties.Application.class);
-        when(applicationProperties.getSpring()).thenReturn(springPropertiesMock);
-        when(springPropertiesMock.getApplication()).thenReturn(springPropertiesApplicationMock);
-        when(springPropertiesApplicationMock.getSecret()).thenReturn(secretString);
+        when(jwtSigningKeyProvider.getSigningKey()).thenReturn(key);
 
         // Act
         var result = keycloakService.validateSecret("invalid_secretToken");
@@ -665,6 +668,53 @@ public class KeycloakServiceTest {
         when(usersResourceSpy.search(anyString(), anyBoolean())).thenReturn(Arrays.asList());
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> keycloakService.regenerateAPIKey("invalid_username"));
+    }
+
+    @Test
+    @DisplayName("When building authorization redirect URL, Expect Keycloak auth URL with required params")
+    void buildAuthorizationRedirectUrlTest() {
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        when(keycloakProperties.getAuthServerUrl()).thenReturn("https://account.tdei.us");
+        when(keycloakProperties.getRealm()).thenReturn("tdei");
+
+        String url = keycloakService.buildAuthorizationRedirectUrl(
+                "https://portal.tdei.us/login", "test-state", "tdei-gateway");
+
+        assertThat(url).contains("https://account.tdei.us/realms/tdei/protocol/openid-connect/auth");
+        assertThat(url).contains("client_id=tdei-gateway");
+        assertThat(url).contains("redirect_uri=https%3A%2F%2Fportal.tdei.us%2Flogin");
+        assertThat(url).contains("response_type=code");
+        assertThat(url).contains("scope=openid");
+        assertThat(url).contains("state=test-state");
+    }
+
+    @Test
+    @DisplayName("When exchanging authorization code, Expect TokenResponse on success")
+    void exchangeAuthorizationCodeTest() {
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        stubClientSecret("tdei-gateway", "test_secret");
+        var mockEndpointUrls = mock(ApplicationProperties.KeycloakEndpointUrls.class);
+        when(applicationProperties.getKeycloakClientEndpoints()).thenReturn(mockEndpointUrls);
+        when(mockEndpointUrls.getBaseUrl()).thenReturn("http://localhost:" + TEST_PORT);
+
+        stubFor(WireMock.post(urlMatching("/token/"))
+                .willReturn(aResponse()
+                        .withBody("{\n" +
+                                "    \"access_token\": \"access_token_value\",\n" +
+                                "    \"expires_in\": 300,\n" +
+                                "    \"refresh_token\": \"refresh_token_value\",\n" +
+                                "    \"refresh_expires_in\": 1800\n" +
+                                "}")
+                        .withHeader("Content-Type", String.valueOf(equalTo("application/json")))
+                        .withStatus(OK.value())));
+
+        var result = keycloakService.exchangeAuthorizationCode(
+                "auth_code", "https://portal.tdei.us/login", "tdei-gateway");
+
+        assertThat(result.getToken()).isEqualTo("access_token_value");
+        assertThat(result.getRefreshToken()).isEqualTo("refresh_token_value");
+        assertThat(result.getExpiresIn()).isEqualTo(300);
+        assertThat(result.getRefreshExpiresIn()).isEqualTo(1800);
     }
 
 }

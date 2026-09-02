@@ -7,7 +7,7 @@ spring:
     secret-ttl: "${SPRING_APPLICATION_SECRET_TTL}"
     allowed-app-clients: "${SPRING_APPLICATION_ALLOWED_APP_CLIENTS}"
   config:
-    import: optional:developer-local-properties.yaml
+    import: optional:developer-dev2-properties.yaml
   datasource:
     username: "${SPRING_DATASOURCE_USERNAME}"
     url: "${SPRING_DATASOURCE_URL}"
@@ -39,10 +39,12 @@ keycloak:
   realm: tdei
   enabled: true
   bearer-only: true
-  resource: tdei-gateway
-  credentials:
-    secret:
+  resource: "${KEYCLOAK_DEFAULT_CLIENT_ID:}"
   use-resource-role-mappings: true
+tdei:
+  keycloak:
+    default-client-id: "${KEYCLOAK_DEFAULT_CLIENT_ID:}"
+    clients: "${KEYCLOAK_AUTH_CLIENTS_CREDS:}"
 logging:
   level:
     org.keycloak: DEBUG

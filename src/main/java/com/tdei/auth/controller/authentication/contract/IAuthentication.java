@@ -6,7 +6,9 @@
 package com.tdei.auth.controller.authentication.contract;
 
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.model.auth.dto.RefreshTokenRequest;
 import com.tdei.auth.model.auth.dto.RegisterUser;
+import com.tdei.auth.model.auth.dto.SsoLoginRequest;
 import com.tdei.auth.model.auth.dto.TokenResponse;
 import com.tdei.auth.model.auth.dto.UserProfile;
 import com.tdei.auth.model.common.dto.LoginModel;
@@ -35,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 @Validated
 public interface IAuthentication {
 
-    @Operation(summary = "Triggers the TDEI account update emails", description = "Triggers the TDEI account update emails via keycloak.  Returns the boolean flag if the email is sent successfully.",
+    @Operation(summary = "Triggers the TDEI account update emails", description = "Triggers the TDEI account update emails via keycloak. Optional clientId defaults to default-client-id. Returns the boolean flag if the email is sent successfully.",
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response - Returns the boolean flag if the email is resent successfully.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
@@ -61,7 +63,7 @@ public interface IAuthentication {
             method = RequestMethod.GET)
     ResponseEntity<UserProfile> getUserByUserName(String userName) throws Exception;
 
-    @Operation(summary = "User Registration API", description = "User Registration API.  Returns the user profile for the newly created user. ",
+    @Operation(summary = "User Registration API", description = "User Registration API. Optional clientId defaults to default-client-id for verification emails. Returns the user profile for the newly created user.",
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response -  Returns the user profile for the newly created user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfile.class))),
@@ -103,7 +105,7 @@ public interface IAuthentication {
             method = RequestMethod.POST)
     ResponseEntity<UserProfile> validateAccessToken(@RequestBody String token) throws InvalidAccessTokenException;
 
-    @Operation(summary = "List available API versions", description = "Returns a json list of the versions of the TDEI API which are available.",
+    @Operation(summary = "List available API versions", description = "Authenticates a user via password grant. Optional clientId defaults to default-client-id.",
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful response - Returns the access token for the validated user.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
@@ -129,7 +131,7 @@ public interface IAuthentication {
     ResponseEntity<Boolean> hasPermission(@Parameter(in = ParameterIn.QUERY, description = "User identifier") @RequestParam() String userId, @Parameter(in = ParameterIn.QUERY, description = "Project Group Id") @RequestParam(required = false) Optional<String> projectGroupId, @Parameter(in = ParameterIn.QUERY, description = "Roles") @Size(min = 1) @RequestParam() String[] roles, @Parameter(in = ParameterIn.QUERY, description = "Affirmative, true to satisfy atleast one role otherwise all roles") @RequestParam(required = false, defaultValue = "false") Optional<Boolean> affirmative);
 
 
-    @Operation(summary = "Re-issue access token", description = "Re-issues access token provided refresh token",
+    @Operation(summary = "Re-issue access token", description = "Re-issues access token provided refresh token and client id",
             tags = {"Authentication"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful validation of refresh token - Returns the refreshed access token.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
@@ -141,7 +143,7 @@ public interface IAuthentication {
             produces = {"application/json"},
             consumes = {"application/json"},
             method = RequestMethod.POST)
-    ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken);
+    ResponseEntity<TokenResponse> reIssueToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest);
 
     @Operation(summary = "Generate secret token", description = "Returns time bound secret token.",
             tags = {"Authentication"})
@@ -188,5 +190,27 @@ public interface IAuthentication {
             consumes = {"*"},
             method = RequestMethod.POST)
     ResponseEntity<String> regenerateAPIKey(@RequestParam(name = "username") String username) throws Exception;
+
+    @Operation(summary = "Initiate SSO login", description = "Redirects the browser to Keycloak for SSO login. The redirect_uri must be registered in Keycloak.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "302", description = "Redirect to Keycloak authorization endpoint"),
+            @ApiResponse(responseCode = "400", description = "Invalid redirect_uri", content = @Content)})
+    @RequestMapping(value = "sso-redirect",
+            method = RequestMethod.GET)
+    void ssoRedirect(@Parameter(in = ParameterIn.QUERY, description = "Frontend callback URL") @RequestParam(name = "redirect_uri") String redirectUri,
+                     @Parameter(in = ParameterIn.QUERY, description = "Keycloak client id (optional, defaults to default-client-id)") @RequestParam(name = "client_id", required = false) String clientId,
+                     javax.servlet.http.HttpServletResponse response) throws java.io.IOException;
+
+    @Operation(summary = "Complete SSO login", description = "Exchanges authorization code and state for access and refresh tokens.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful response - Returns access and refresh tokens.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid code or state.", content = @Content)})
+    @RequestMapping(value = "sso-login",
+            produces = {"application/json"},
+            consumes = {"application/json"},
+            method = RequestMethod.POST)
+    ResponseEntity<TokenResponse> ssoLogin(@Valid @RequestBody SsoLoginRequest request);
 }
 

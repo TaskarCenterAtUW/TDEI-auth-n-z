@@ -75,7 +75,7 @@ Secrets are configured as environment variables on the deployment server.
 
 | Name                                | Description                                               |
 |-------------------------------------|-----------------------------------------------------------|
-| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak secret from portal                               |
+| KEYCLOAK_CREDENTIALS_SECRET         | Deprecated — use `KEYCLOAK_AUTH_CLIENTS_CREDS` instead    |
 | SPRING_DATASOURCE_URL               | Database JDBC URL                                         |
 | SPRING_DATASOURCE_USERNAME          | Database user name                                        |
 | SPRING_DATASOURCE_PASSWORD          | Database password                                         |
@@ -83,11 +83,69 @@ Secrets are configured as environment variables on the deployment server.
 | SPRING_APPLICATION_SECRET_TTL       | Secret token time to live in seconds                      |
 | KEYCLOAK_CLIENT_ENDPOINTS_BASE_URL  | Keycloak base url                                         |
 | KEYCLOAK_AUTH_SERVER_URL            | Keycloak auth server url                                  |
-| KEYCLOAK_CREDENTIALS_SECRET         | Keycloak client secret                                    |
+| KEYCLOAK_DEFAULT_CLIENT_ID          | Default Keycloak client id (must exist in `KEYCLOAK_AUTH_CLIENTS_CREDS`; also sets `keycloak.resource` for the adapter) |
+| KEYCLOAK_AUTH_CLIENTS_CREDS         | All Keycloak clients as JSON or `client-id:secret;...` (see below) |
 | KEYCLOAK_CONNECTION_POOL_SIZE       | Keycloak connection pool size (default : 100)             |
 | KEYCLOAK_CONNECTION_TIMEOUT         | Keycloak connection timeout in seconds (default : 15sec)  |
 | SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE | TDEI database connection pool size (default : 100)        |
 | SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT | TDEI database connection timeout in miliseconds  (default : 15sec) |
+| SSO_STATE_TTL_SECONDS               | SSO state JWT TTL in seconds (default : 600)              |
+| SSO_ALLOWED_CORS_ORIGINS              | Comma-separated FE origins allowed to call `/sso-login` |
+
+## Browser SSO (Keycloak redirect)
+
+Web apps on `*.tdei.us` can use OIDC authorization code flow for browser SSO.
+
+### Flow
+
+1. Login button navigates to `GET /api/v1/sso-redirect?redirect_uri={fe_callback_url}&client_id={keycloak_client_id}` (`client_id` optional, defaults to `KEYCLOAK_DEFAULT_CLIENT_ID`)
+2. Auth service returns HTTP 302 to Keycloak login
+3. Keycloak redirects back to the FE callback with `?code=...&state=...`
+4. FE calls `POST /api/v1/sso-login` with `{ "code", "state", "clientId" }` (`clientId` optional — taken from state when omitted)
+5. To refresh tokens, FE calls `POST /api/v1/refreshToken` with `{ "refreshToken", "clientId" }` (`clientId` optional, defaults to `KEYCLOAK_DEFAULT_CLIENT_ID`)
+
+### Keycloak client configuration
+
+Clients are loaded from **`KEYCLOAK_AUTH_CLIENTS_CREDS`** (bound to `tdei.keycloak.clients` in `application.yaml`):
+
+```yaml
+tdei:
+  keycloak:
+    default-client-id: "${KEYCLOAK_DEFAULT_CLIENT_ID:}"
+    clients: "${KEYCLOAK_AUTH_CLIENTS_CREDS:}"
+```
+
+> **Note:** Client config uses the `tdei.keycloak` prefix because `keycloak.*` is reserved by `keycloak-spring-boot-starter`.
+
+Set `KEYCLOAK_DEFAULT_CLIENT_ID` to the default client for admin API operations, password grant via `/authenticate`, and refresh when `clientId` is omitted. SSO and other flows accept an optional `clientId` from the frontend.
+
+**JSON format (recommended):**
+
+```bash
+export KEYCLOAK_DEFAULT_CLIENT_ID=tdei-gateway
+export KEYCLOAK_AUTH_CLIENTS_CREDS='{"tdei-gateway":"gateway-secret","tdei-portal":"portal-secret"}'
+```
+
+**Delimited format (alternative):**
+
+```bash
+export KEYCLOAK_AUTH_CLIENTS_CREDS='tdei-gateway:gateway-secret;tdei-portal:portal-secret'
+```
+
+To add a new client, update `KEYCLOAK_AUTH_CLIENTS_CREDS` in your deployment only.
+
+`POST /api/v1/authenticate` (password grant) accepts optional `clientId` in the request body and defaults to `KEYCLOAK_DEFAULT_CLIENT_ID`.
+
+### Keycloak client setup (realm `tdei`)
+
+| Setting | Value |
+|---------|-------|
+| Standard flow | Enabled |
+| Direct access grants | Enabled (for `/authenticate`) |
+| Valid redirect URIs | All FE callback URLs (e.g. `https://portal.tdei.us/login`) |
+| Web origins | FE app origins (e.g. `https://portal.tdei.us`) |
+
+Redirect URIs are maintained in Keycloak only — auth-n-z passes the FE `redirect_uri` through to Keycloak.
 
 ## Building the project
 
@@ -134,7 +192,8 @@ Note: Running unit test does not require environment variable setup
 
 |  Name   | Description                          |
 |-----|--------------------------------------|
-|  KEYCLOAK_CREDENTIALS_SECRET | Keycloak secret from portal          |
+|  KEYCLOAK_AUTH_CLIENTS_CREDS | Keycloak clients as JSON or `client-id:secret;...` |
+|  KEYCLOAK_DEFAULT_CLIENT_ID | Default client id (must exist in `KEYCLOAK_AUTH_CLIENTS_CREDS`) |
 |  KEYCLOAK_AUTH_SERVER_URL | Keycloak auth server url             |
 
 2. Ensure [Building the server](#1-building-the-server) step is executed.

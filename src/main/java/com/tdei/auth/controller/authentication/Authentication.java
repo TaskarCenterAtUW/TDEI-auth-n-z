@@ -2,16 +2,18 @@ package com.tdei.auth.controller.authentication;
 
 import com.tdei.auth.controller.authentication.contract.IAuthentication;
 import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
+import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
 import com.tdei.auth.mapper.TokenMapper;
 import com.tdei.auth.mapper.UserProfileMapper;
-import com.tdei.auth.model.auth.dto.RegisterUser;
-import com.tdei.auth.model.auth.dto.TokenResponse;
-import com.tdei.auth.model.auth.dto.UserProfile;
+import com.tdei.auth.model.auth.dto.*;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.common.dto.TriggerEmailModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
+import com.tdei.auth.service.KeycloakClientResolver;
 import com.tdei.auth.service.KeycloakService;
+import com.tdei.auth.service.SsoRedirectValidator;
+import com.tdei.auth.service.SsoStateService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.representations.AccessTokenResponse;
@@ -22,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
@@ -34,6 +38,9 @@ import java.util.concurrent.TimeoutException;
 public class Authentication implements IAuthentication {
 
     private final KeycloakService keycloakService;
+    private final SsoStateService ssoStateService;
+    private final SsoRedirectValidator ssoRedirectValidator;
+    private final KeycloakClientResolver keycloakClientResolver;
 
     @Override
     public ResponseEntity<UserProfile> validateApiKey(@RequestBody String apiKey) throws InvalidKeyException {
@@ -77,8 +84,11 @@ public class Authentication implements IAuthentication {
     }
 
     @Override
-    public ResponseEntity<TokenResponse> reIssueToken(@RequestBody String refreshToken) {
-        TokenResponse accessTokenResponse = keycloakService.reIssueToken(refreshToken.replaceAll("^\"|\"$", ""));
+    public ResponseEntity<TokenResponse> reIssueToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+        String clientId = keycloakClientResolver.resolveClientId(refreshTokenRequest.getClientId());
+        TokenResponse accessTokenResponse = keycloakService.reIssueToken(
+                refreshTokenRequest.getRefreshToken(),
+                clientId);
         return ResponseEntity.ok(accessTokenResponse);
     }
 
@@ -102,5 +112,30 @@ public class Authentication implements IAuthentication {
     @Override
     public ResponseEntity<String> regenerateAPIKey(@RequestParam(name = "username") String username) throws Exception {
         return ResponseEntity.ok(keycloakService.regenerateAPIKey(username));
+    }
+
+    @Override
+    public void ssoRedirect(@RequestParam(name = "redirect_uri") String redirectUri,
+                            @RequestParam(name = "client_id", required = false) String clientId,
+                            HttpServletResponse response) throws IOException {
+        ssoRedirectValidator.validateRedirectUri(redirectUri);
+        String resolvedClientId = keycloakClientResolver.resolveClientId(clientId);
+        String state = ssoStateService.createState(redirectUri, resolvedClientId);
+        String authorizationUrl = keycloakService.buildAuthorizationRedirectUrl(redirectUri, state, resolvedClientId);
+        response.sendRedirect(authorizationUrl);
+    }
+
+    @Override
+    public ResponseEntity<TokenResponse> ssoLogin(@Valid @RequestBody SsoLoginRequest request) {
+        var ssoState = ssoStateService.validateState(request.getState());
+        String clientId = request.getClientId() == null || request.getClientId().isBlank()
+                ? ssoState.getClientId()
+                : keycloakClientResolver.resolveClientId(request.getClientId());
+        if (!ssoState.getClientId().equals(clientId)) {
+            throw new InvalidCredentialsException("client_id does not match SSO state");
+        }
+        TokenResponse tokens = keycloakService.exchangeAuthorizationCode(
+                request.getCode(), ssoState.getRedirectUri(), clientId);
+        return ResponseEntity.ok(tokens);
     }
 }
