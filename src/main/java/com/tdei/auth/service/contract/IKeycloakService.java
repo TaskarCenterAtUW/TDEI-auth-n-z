@@ -22,7 +22,11 @@ public interface IKeycloakService {
 
     UserProfile getUserByUserName(String userName) throws Exception;
 
-    TokenResponse reIssueToken(String refreshToken);
+    TokenResponse reIssueToken(String refreshToken, String clientId);
+
+    String buildAuthorizationRedirectUrl(String redirectUri, String state, String clientId);
+
+    TokenResponse exchangeAuthorizationCode(String code, String redirectUri, String clientId);
 
     String generateSecret();
 

@@ -19,4 +19,10 @@ public interface KeyclockTokenClient {
     @RequestLine("POST /")
     @Headers({"Content-Type: application/x-www-form-urlencoded"})
     LinkedTreeMap refreshToken(@Param("client_id") String clientId, @Param("client_secret") String clientSecret, @Param("refresh_token") String token, @Param("grant_type") String grantType);
+
+    @RequestLine("POST /")
+    @Headers({"Content-Type: application/x-www-form-urlencoded"})
+    LinkedTreeMap exchangeCode(@Param("client_id") String clientId, @Param("client_secret") String clientSecret,
+            @Param("grant_type") String grantType, @Param("code") String code,
+            @Param("redirect_uri") String redirectUri);
 }

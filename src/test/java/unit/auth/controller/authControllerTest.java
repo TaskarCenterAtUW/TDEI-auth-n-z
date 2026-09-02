@@ -2,17 +2,15 @@ package unit.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tdei.auth.controller.authentication.Authentication;
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidAccessTokenException;
-import com.tdei.auth.core.config.exception.handler.exceptions.InvalidCredentialsException;
-import com.tdei.auth.core.config.exception.handler.exceptions.ResourceNotFoundException;
-import com.tdei.auth.core.config.exception.handler.exceptions.UserExistsException;
-import com.tdei.auth.model.auth.dto.RegisterUser;
-import com.tdei.auth.model.auth.dto.TokenResponse;
-import com.tdei.auth.model.auth.dto.UserProfile;
+import com.tdei.auth.core.config.exception.handler.exceptions.*;
+import com.tdei.auth.model.auth.dto.*;
 import com.tdei.auth.model.common.dto.LoginModel;
 import com.tdei.auth.model.common.dto.ResetCredentialModel;
 import com.tdei.auth.model.keycloak.KUserInfo;
+import com.tdei.auth.service.KeycloakClientResolver;
 import com.tdei.auth.service.KeycloakService;
+import com.tdei.auth.service.SsoRedirectValidator;
+import com.tdei.auth.service.SsoStateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -28,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -47,6 +46,12 @@ import static org.mockito.Mockito.*;
 public class authControllerTest {
     @Mock
     private KeycloakService keycloakService;
+    @Mock
+    private SsoStateService ssoStateService;
+    @Mock
+    private SsoRedirectValidator ssoRedirectValidator;
+    @Mock
+    private KeycloakClientResolver keycloakClientResolver;
     @InjectMocks
     private Authentication authController;
     @Autowired
@@ -187,10 +192,14 @@ public class authControllerTest {
     @DisplayName("When refreshing the valid refresh token, Expect to return TokenResponse")
     void reIssueTokenTest() {
         //Arrange
-        when(keycloakService.reIssueToken("refresh_token")).thenReturn(new TokenResponse());
+        var request = new RefreshTokenRequest();
+        request.setRefreshToken("refresh_token");
+        request.setClientId("tdei-gateway");
+        when(keycloakClientResolver.resolveClientId("tdei-gateway")).thenReturn("tdei-gateway");
+        when(keycloakService.reIssueToken("refresh_token", "tdei-gateway")).thenReturn(new TokenResponse());
 
         //Act
-        var user = authController.reIssueToken("refresh_token");
+        var user = authController.reIssueToken(request);
         //Assert
         assertThat(user.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(user.getBody()).isInstanceOf(TokenResponse.class);
@@ -200,9 +209,13 @@ public class authControllerTest {
     @DisplayName("When refreshing the invalid refresh token, Expect to throw InvalidAccessTokenException")
     void reIssueTokenTest2() {
         //Arrange
-        when(keycloakService.reIssueToken("refresh_token")).thenThrow(new InvalidAccessTokenException("Invalid/Expired Access Token"));
+        var request = new RefreshTokenRequest();
+        request.setRefreshToken("refresh_token");
+        request.setClientId("tdei-gateway");
+        when(keycloakClientResolver.resolveClientId("tdei-gateway")).thenReturn("tdei-gateway");
+        when(keycloakService.reIssueToken("refresh_token", "tdei-gateway")).thenThrow(new InvalidAccessTokenException("Invalid/Expired Access Token"));
         //Act & Arrange
-        assertThrows(InvalidAccessTokenException.class, () -> authController.reIssueToken("refresh_token"));
+        assertThrows(InvalidAccessTokenException.class, () -> authController.reIssueToken(request));
     }
 
     @Test
@@ -493,5 +506,93 @@ public class authControllerTest {
         doThrow(new ResourceNotFoundException("User not found")).when(keycloakService).regenerateAPIKey(anyString());
 
         assertThrows(ResourceNotFoundException.class, () -> authController.regenerateAPIKey("test"));
+    }
+
+    @Test
+    @DisplayName("When completing SSO login with valid code and state, Expect TokenResponse")
+    void ssoLoginTest() {
+        SsoLoginRequest request = new SsoLoginRequest();
+        request.setCode("auth_code");
+        request.setState("signed_state");
+        request.setClientId("tdei-portal");
+        TokenResponse tokenResponse = new TokenResponse();
+        tokenResponse.setToken("access_token");
+
+        when(ssoStateService.validateState("signed_state"))
+                .thenReturn(new SsoStateContext("https://portal.tdei.us/login", "tdei-portal"));
+        when(keycloakClientResolver.resolveClientId("tdei-portal")).thenReturn("tdei-portal");
+        when(keycloakService.exchangeAuthorizationCode("auth_code", "https://portal.tdei.us/login", "tdei-portal"))
+                .thenReturn(tokenResponse);
+
+        var response = authController.ssoLogin(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(tokenResponse);
+    }
+
+    @Test
+    @DisplayName("When completing SSO login with mismatched client_id, Expect InvalidCredentialsException")
+    void ssoLoginMismatchedClientTest() {
+        SsoLoginRequest request = new SsoLoginRequest();
+        request.setCode("auth_code");
+        request.setState("signed_state");
+        request.setClientId("other-client");
+
+        when(ssoStateService.validateState("signed_state"))
+                .thenReturn(new SsoStateContext("https://portal.tdei.us/login", "tdei-portal"));
+        when(keycloakClientResolver.resolveClientId("other-client")).thenReturn("other-client");
+
+        assertThrows(InvalidCredentialsException.class, () -> authController.ssoLogin(request));
+        verify(keycloakService, never()).exchangeAuthorizationCode(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("When initiating SSO redirect with valid redirect_uri, Expect redirect to Keycloak")
+    void ssoRedirectTest() throws Exception {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        String redirectUri = "https://portal.tdei.us/login";
+        String clientId = "tdei-portal";
+        String state = "jwt-state";
+        String keycloakUrl = "https://account.tdei.us/realms/tdei/protocol/openid-connect/auth?state=jwt-state";
+
+        doNothing().when(ssoRedirectValidator).validateRedirectUri(redirectUri);
+        when(keycloakClientResolver.resolveClientId(clientId)).thenReturn(clientId);
+        when(ssoStateService.createState(redirectUri, clientId)).thenReturn(state);
+        when(keycloakService.buildAuthorizationRedirectUrl(redirectUri, state, clientId)).thenReturn(keycloakUrl);
+
+        authController.ssoRedirect(redirectUri, clientId, response);
+
+        verify(ssoRedirectValidator).validateRedirectUri(redirectUri);
+        verify(keycloakClientResolver).resolveClientId(clientId);
+        verify(ssoStateService).createState(redirectUri, clientId);
+        verify(keycloakService).buildAuthorizationRedirectUrl(redirectUri, state, clientId);
+        verify(response).sendRedirect(keycloakUrl);
+    }
+
+    @Test
+    @DisplayName("When initiating SSO redirect with malformed redirect_uri, Expect InvalidSsoRequestException")
+    void ssoRedirectMalformedUriTest() throws Exception {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        String redirectUri = "http://portal.tdei.us/login";
+
+        doThrow(new InvalidSsoRequestException("redirect_uri must use https"))
+                .when(ssoRedirectValidator).validateRedirectUri(redirectUri);
+
+        assertThrows(InvalidSsoRequestException.class, () -> authController.ssoRedirect(redirectUri, "tdei-portal", response));
+        verify(response, never()).sendRedirect(anyString());
+    }
+
+    @Test
+    @DisplayName("When completing SSO login with invalid state, Expect InvalidCredentialsException")
+    void ssoLoginInvalidStateTest() {
+        SsoLoginRequest request = new SsoLoginRequest();
+        request.setCode("auth_code");
+        request.setState("invalid_state");
+
+        when(ssoStateService.validateState("invalid_state"))
+                .thenThrow(new InvalidCredentialsException("Invalid or expired SSO state"));
+
+        assertThrows(InvalidCredentialsException.class, () -> authController.ssoLogin(request));
+        verify(keycloakService, never()).exchangeAuthorizationCode(anyString(), anyString(), anyString());
     }
 }
