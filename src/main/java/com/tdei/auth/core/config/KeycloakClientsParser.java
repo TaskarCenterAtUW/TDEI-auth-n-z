@@ -18,11 +18,26 @@ public final class KeycloakClientsParser {
             return new HashMap<>();
         }
 
-        String trimmed = source.trim();
+        String trimmed = unwrapQuotes(source.trim());
+        if (trimmed.isBlank()) {
+            return new HashMap<>();
+        }
         if (trimmed.startsWith("{")) {
             return parseJson(trimmed);
         }
         return parseDelimited(trimmed);
+    }
+
+    /** Strip wrapping single/double quotes Azure or shells sometimes add around the whole value. */
+    private static String unwrapQuotes(String value) {
+        if (value.length() >= 2) {
+            char first = value.charAt(0);
+            char last = value.charAt(value.length() - 1);
+            if ((first == '\'' && last == '\'') || (first == '"' && last == '"')) {
+                return value.substring(1, value.length() - 1).trim();
+            }
+        }
+        return value;
     }
 
     private static Map<String, String> parseJson(String json) {
