@@ -26,6 +26,8 @@ public interface IKeycloakService {
 
     String buildAuthorizationRedirectUrl(String redirectUri, String state, String clientId);
 
+    String buildLogoutRedirectUrl(String redirectUri, String clientId);
+
     TokenResponse exchangeAuthorizationCode(String code, String redirectUri, String clientId);
 
     String generateSecret();

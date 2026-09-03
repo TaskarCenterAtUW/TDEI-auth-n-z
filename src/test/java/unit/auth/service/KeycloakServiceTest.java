@@ -689,6 +689,21 @@ public class KeycloakServiceTest {
     }
 
     @Test
+    @DisplayName("When building logout redirect URL, Expect Keycloak logout URL with client_id and post_logout_redirect_uri")
+    void buildLogoutRedirectUrlTest() {
+        when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);
+        when(keycloakProperties.getAuthServerUrl()).thenReturn("https://account.tdei.us");
+        when(keycloakProperties.getRealm()).thenReturn("tdei");
+
+        String url = keycloakService.buildLogoutRedirectUrl(
+                "https://portal.tdei.us/login", "tdei-gateway");
+
+        assertThat(url).contains("https://account.tdei.us/realms/tdei/protocol/openid-connect/logout");
+        assertThat(url).contains("client_id=tdei-gateway");
+        assertThat(url).contains("post_logout_redirect_uri=https%3A%2F%2Fportal.tdei.us%2Flogin");
+    }
+
+    @Test
     @DisplayName("When exchanging authorization code, Expect TokenResponse on success")
     void exchangeAuthorizationCodeTest() {
         when(applicationProperties.getKeycloak()).thenReturn(keycloakProperties);

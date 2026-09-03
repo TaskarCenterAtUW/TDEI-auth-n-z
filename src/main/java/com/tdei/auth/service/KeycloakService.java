@@ -70,6 +70,22 @@ public class KeycloakService implements IKeycloakService {
     }
 
     @Override
+    public String buildLogoutRedirectUrl(String redirectUri, String clientId) {
+        String authServerUrl = applicationProperties.getKeycloak().getAuthServerUrl();
+        String realm = applicationProperties.getKeycloak().getRealm();
+
+        try {
+            return String.format("%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
+                    authServerUrl,
+                    realm,
+                    encodeQueryParam(clientId),
+                    encodeQueryParam(redirectUri));
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Failed to encode logout URL", e);
+        }
+    }
+
+    @Override
     public TokenResponse exchangeAuthorizationCode(String code, String redirectUri, String clientId) {
         try {
             KeyclockTokenClient keyclockTokenClient = KeyclockTokenClient
