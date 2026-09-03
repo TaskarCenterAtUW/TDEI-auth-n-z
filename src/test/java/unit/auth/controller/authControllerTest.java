@@ -583,6 +583,26 @@ public class authControllerTest {
     }
 
     @Test
+    @DisplayName("When initiating SSO logout with valid redirect_uri, Expect redirect to Keycloak logout")
+    void ssoLogoutTest() throws Exception {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        String redirectUri = "https://portal.tdei.us/login";
+        String clientId = "tdei-gateway";
+        String logoutUrl = "https://account.tdei.us/realms/tdei/protocol/openid-connect/logout?client_id=tdei-gateway&post_logout_redirect_uri=https%3A%2F%2Fportal.tdei.us%2Flogin";
+
+        doNothing().when(ssoRedirectValidator).validateRedirectUri(redirectUri);
+        when(keycloakClientResolver.resolveClientId(clientId)).thenReturn(clientId);
+        when(keycloakService.buildLogoutRedirectUrl(redirectUri, clientId)).thenReturn(logoutUrl);
+
+        authController.ssoLogout(redirectUri, clientId, response);
+
+        verify(ssoRedirectValidator).validateRedirectUri(redirectUri);
+        verify(keycloakClientResolver).resolveClientId(clientId);
+        verify(keycloakService).buildLogoutRedirectUrl(redirectUri, clientId);
+        verify(response).sendRedirect(logoutUrl);
+    }
+
+    @Test
     @DisplayName("When completing SSO login with invalid state, Expect InvalidCredentialsException")
     void ssoLoginInvalidStateTest() {
         SsoLoginRequest request = new SsoLoginRequest();

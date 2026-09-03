@@ -101,6 +101,7 @@ Web apps on `*.tdei.us` can use OIDC authorization code flow for browser SSO.
 3. Keycloak redirects back to the FE callback with `?code=...&state=...`
 4. FE calls `POST /api/v1/sso-login` with `{ "code", "state", "clientId" }` (`clientId` optional — taken from state when omitted)
 5. To refresh tokens, FE calls `POST /api/v1/refreshToken` with `{ "refreshToken", "clientId" }` (`clientId` optional, defaults to `TDEI_KEYCLOAK_DEFAULT_CLIENT_ID`)
+6. Logout navigates to `GET /api/v1/sso-logout?redirect_uri={fe_url}&client_id={keycloak_client_id}` (`client_id` optional); auth service returns HTTP 302 to Keycloak logout, which then redirects to `redirect_uri`
 
 ### Keycloak client configuration
 
@@ -141,6 +142,7 @@ To add a new client, update `TDEI_KEYCLOAK_CLIENTS` in your deployment only.
 | Standard flow | Enabled |
 | Direct access grants | Enabled (for `/authenticate`) |
 | Valid redirect URIs | All FE callback URLs (e.g. `https://portal.tdei.us/login`) |
+| Valid post logout redirect URIs | Same FE URLs used with `/sso-logout` (e.g. `https://portal.tdei.us/login`) |
 | Web origins | FE app origins (e.g. `https://portal.tdei.us`) |
 
 Redirect URIs are maintained in Keycloak only — auth-n-z passes the FE `redirect_uri` through to Keycloak.

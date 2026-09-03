@@ -138,4 +138,14 @@ public class Authentication implements IAuthentication {
                 request.getCode(), ssoState.getRedirectUri(), clientId);
         return ResponseEntity.ok(tokens);
     }
+
+    @Override
+    public void ssoLogout(@RequestParam(name = "redirect_uri") String redirectUri,
+                          @RequestParam(name = "client_id", required = false) String clientId,
+                          HttpServletResponse response) throws IOException {
+        ssoRedirectValidator.validateRedirectUri(redirectUri);
+        String resolvedClientId = keycloakClientResolver.resolveClientId(clientId);
+        String logoutUrl = keycloakService.buildLogoutRedirectUrl(redirectUri, resolvedClientId);
+        response.sendRedirect(logoutUrl);
+    }
 }

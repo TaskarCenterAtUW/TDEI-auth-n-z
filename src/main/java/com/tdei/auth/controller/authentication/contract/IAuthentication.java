@@ -212,5 +212,16 @@ public interface IAuthentication {
             consumes = {"application/json"},
             method = RequestMethod.POST)
     ResponseEntity<TokenResponse> ssoLogin(@Valid @RequestBody SsoLoginRequest request);
+
+    @Operation(summary = "Initiate SSO logout", description = "Redirects the browser to Keycloak logout. The redirect_uri must be registered as a Valid post logout redirect URI in Keycloak.",
+            tags = {"Authentication"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "302", description = "Redirect to Keycloak logout endpoint"),
+            @ApiResponse(responseCode = "400", description = "Invalid redirect_uri", content = @Content)})
+    @RequestMapping(value = "sso-logout",
+            method = RequestMethod.GET)
+    void ssoLogout(@Parameter(in = ParameterIn.QUERY, description = "Frontend URL after logout") @RequestParam(name = "redirect_uri") String redirectUri,
+                   @Parameter(in = ParameterIn.QUERY, description = "Keycloak client id (optional, defaults to default-client-id)") @RequestParam(name = "client_id", required = false) String clientId,
+                   javax.servlet.http.HttpServletResponse response) throws java.io.IOException;
 }
 
