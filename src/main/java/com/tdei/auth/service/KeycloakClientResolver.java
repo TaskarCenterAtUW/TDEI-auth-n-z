@@ -42,8 +42,8 @@ public class KeycloakClientResolver {
         Map<String, String> clients = clients();
         if (clients.isEmpty()) {
             throw new IllegalStateException(
-                    "tdei.keycloak.clients is empty. Set KEYCLOAK_AUTH_CLIENTS_CREDS "
-                            + "(JSON {\"client-id\":\"secret\"} or client-id:secret;...). "
+                    "tdei.keycloak.clients is empty. Set TDEI_KEYCLOAK_CLIENTS "
+                            + "(JSON {\"client-id\":\"secret\"} or client-id:secret|...). "
                             + "Raw value present=" + (tdeiKeycloakProperties.getClients() != null
                             && !tdeiKeycloakProperties.getClients().isBlank()));
         }

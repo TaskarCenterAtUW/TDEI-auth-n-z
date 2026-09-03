@@ -39,7 +39,7 @@ keycloak:
   realm: tdei
   enabled: true
   bearer-only: true
-  resource: "${KEYCLOAK_DEFAULT_CLIENT_ID:}"
+  resource: "${TDEI_KEYCLOAK_DEFAULT_CLIENT_ID:}"
   use-resource-role-mappings: true
 tdei:
   keycloak:

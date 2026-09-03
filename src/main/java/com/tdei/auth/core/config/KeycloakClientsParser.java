@@ -46,26 +46,29 @@ public final class KeycloakClientsParser {
             return clients != null ? clients : new HashMap<>();
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                    "Invalid KEYCLOAK_AUTH_CLIENTS_CREDS JSON. Expected format: {\"client-id\":\"secret\"}", e);
+                    "Invalid TDEI_KEYCLOAK_CLIENTS JSON. Expected format: {\"client-id\":\"secret\"}", e);
         }
     }
 
     private static Map<String, String> parseDelimited(String source) {
+        // Prefer '|' — Azure App Settings use a string value; ';' is awkward in some tools.
+        String delimiter = source.contains("|") ? "\\|" : ";";
         Map<String, String> clients = new HashMap<>();
-        for (String entry : source.split(";")) {
+        for (String entry : source.split(delimiter)) {
             if (entry.isBlank()) {
                 continue;
             }
             int separator = entry.indexOf(':');
             if (separator <= 0 || separator == entry.length() - 1) {
                 throw new IllegalArgumentException(
-                        "Invalid KEYCLOAK_AUTH_CLIENTS_CREDS entry '" + entry + "'. Expected client-id:secret");
+                        "Invalid TDEI_KEYCLOAK_CLIENTS entry '" + entry
+                                + "'. Expected client-id:secret (use | between clients)");
             }
             String clientId = entry.substring(0, separator).trim();
             String secret = entry.substring(separator + 1).trim();
             if (clientId.isEmpty() || secret.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "Invalid KEYCLOAK_AUTH_CLIENTS_CREDS entry '" + entry + "'. Expected client-id:secret");
+                        "Invalid TDEI_KEYCLOAK_CLIENTS entry '" + entry + "'. Expected client-id:secret");
             }
             clients.put(clientId, secret);
         }

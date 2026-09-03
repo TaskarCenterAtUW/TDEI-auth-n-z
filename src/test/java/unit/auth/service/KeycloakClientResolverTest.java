@@ -68,11 +68,11 @@ class KeycloakClientResolverTest {
     }
 
     @Test
-    @DisplayName("When clients env is empty, Expect IllegalStateException mentioning KEYCLOAK_AUTH_CLIENTS_CREDS")
+    @DisplayName("When clients env is empty, Expect IllegalStateException mentioning TDEI_KEYCLOAK_CLIENTS")
     void emptyClientsTest() {
         tdeiKeycloakProperties.setClients("");
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> keycloakClientResolver.validateClientId("tdei-gateway"));
-        assertEquals(true, ex.getMessage().contains("KEYCLOAK_AUTH_CLIENTS_CREDS"));
+        assertEquals(true, ex.getMessage().contains("TDEI_KEYCLOAK_CLIENTS"));
     }
 }
