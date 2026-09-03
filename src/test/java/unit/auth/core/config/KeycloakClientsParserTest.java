@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class KeycloakClientsParserTest {
 
     @Test
-    @DisplayName("When KEYCLOAK_AUTH_CLIENTS_CREDS is JSON, Expect client map parsed")
+    @DisplayName("When TDEI_KEYCLOAK_CLIENTS is JSON, Expect client map parsed")
     void parseJsonTest() {
         Map<String, String> clients = KeycloakClientsParser.parse(
                 "{\"tdei-gateway\":\"secret-a\",\"tdei-portal\":\"secret-b\"}");
@@ -25,7 +25,7 @@ class KeycloakClientsParserTest {
     }
 
     @Test
-    @DisplayName("When KEYCLOAK_AUTH_CLIENTS_CREDS is delimited, Expect client map parsed")
+    @DisplayName("When TDEI_KEYCLOAK_CLIENTS is delimited, Expect client map parsed")
     void parseDelimitedTest() {
         Map<String, String> clients = KeycloakClientsParser.parse(
                 "tdei-gateway:secret-a;tdei-portal:secret-b");
@@ -36,7 +36,7 @@ class KeycloakClientsParserTest {
     }
 
     @Test
-    @DisplayName("When KEYCLOAK_AUTH_CLIENTS_CREDS secret contains colon, Expect full secret preserved")
+    @DisplayName("When TDEI_KEYCLOAK_CLIENTS secret contains colon, Expect full secret preserved")
     void parseSecretWithColonTest() {
         Map<String, String> clients = KeycloakClientsParser.parse("my-client:abc:def:ghi");
 
@@ -44,7 +44,17 @@ class KeycloakClientsParserTest {
     }
 
     @Test
-    @DisplayName("When KEYCLOAK_AUTH_CLIENTS_CREDS is invalid, Expect IllegalArgumentException")
+    @DisplayName("When TDEI_KEYCLOAK_CLIENTS uses pipe delimiter, Expect client map parsed")
+    void parsePipeDelimitedTest() {
+        Map<String, String> clients = KeycloakClientsParser.parse(
+                "tdei-gateway:secret-a|tdei-portal:secret-b");
+
+        assertThat(clients).containsEntry("tdei-gateway", "secret-a");
+        assertThat(clients).containsEntry("tdei-portal", "secret-b");
+    }
+
+    @Test
+    @DisplayName("When TDEI_KEYCLOAK_CLIENTS is invalid, Expect IllegalArgumentException")
     void parseInvalidTest() {
         assertThrows(IllegalArgumentException.class, () -> KeycloakClientsParser.parse("not-json"));
     }

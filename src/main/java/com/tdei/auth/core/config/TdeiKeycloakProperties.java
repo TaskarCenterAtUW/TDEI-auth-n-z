@@ -19,8 +19,8 @@ public class TdeiKeycloakProperties {
     private String defaultClientId;
 
     /**
-     * Raw value from {@code KEYCLOAK_AUTH_CLIENTS_CREDS}:
-     * JSON {@code {"client-id":"secret"}} or delimited {@code client-id:secret;...}.
+     * Raw value from {@code TDEI_KEYCLOAK_CLIENTS}:
+     * JSON {@code {"client-id":"secret"}} or delimited {@code client-id:secret|client-id2:secret2}.
      */
     private String clients;
 
