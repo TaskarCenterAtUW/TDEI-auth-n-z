@@ -126,6 +126,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntityBuilder.build(err);
     }
 
+    @ExceptionHandler(InvalidSsoRequestException.class)
+    public ResponseEntity<Object> handleInvalidSsoRequestException(InvalidSsoRequestException ex) {
+
+        List<String> details = new ArrayList<>();
+        details.add(ex.getMessage());
+
+        ApiError err = new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST, "Invalid SSO request", details);
+
+        return ResponseEntityBuilder.build(err);
+    }
+
     @ExceptionHandler(InvalidKeyException.class)
     public ResponseEntity<Object> handleInvalidKeyException(InvalidKeyException ex) {
 

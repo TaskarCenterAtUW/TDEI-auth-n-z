@@ -23,4 +23,7 @@ public class LoginModel {
 //    )
     @Length(min = 8, max = 255)
     private String password;
+
+    @Schema(description = "Keycloak client id for password grant. Defaults to default-client-id when omitted.")
+    private String clientId;
 }
