@@ -1,5 +1,6 @@
 package com.tdei.auth.model.auth.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.validation.annotation.Validated;
@@ -32,4 +33,7 @@ public class RegisterUser {
     @Length(min = 8, max = 255)
     private String password;
     private String code;
+
+    @Schema(description = "Keycloak client id for verification email. Defaults to default-client-id when omitted.")
+    private String clientId;
 }

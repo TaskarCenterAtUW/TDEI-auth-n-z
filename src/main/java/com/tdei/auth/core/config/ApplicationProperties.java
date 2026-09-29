@@ -3,6 +3,7 @@ package com.tdei.auth.core.config;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +17,7 @@ public class ApplicationProperties {
     private SpringProperties spring;
     private keycloakProperties keycloak;
     private KeycloakEndpointUrls keycloakClientEndpoints;
+    private SsoProperties sso = new SsoProperties();
 
     @Data
     @NoArgsConstructor
@@ -57,14 +59,6 @@ public class ApplicationProperties {
         private int connectionPoolSize;
         private int connectionTimeout;
         private String realm;
-        private String resource;
-        private KeycloakCreds credentials;
-
-        @Data
-        @NoArgsConstructor
-        public static class KeycloakCreds {
-            private String secret = "";
-        }
     }
 
     @Data
@@ -72,6 +66,13 @@ public class ApplicationProperties {
     public static class KeycloakEndpointUrls {
         private String baseUrl;
         private String redirectUrl;
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class SsoProperties {
+        private int stateTtlSeconds = 600;
+        private List<String> allowedCorsOrigins = new ArrayList<>();
     }
 }
 

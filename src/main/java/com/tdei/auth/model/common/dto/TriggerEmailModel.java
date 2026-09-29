@@ -21,4 +21,7 @@ public class TriggerEmailModel {
     @NotNull
     @ArraySchema(minItems = 1, schema = @Schema(implementation = EmailActions.class))
     List<EmailActions> email_actions;
+
+    @Schema(description = "Keycloak client id for email actions. Defaults to default-client-id when omitted.")
+    private String clientId;
 }
